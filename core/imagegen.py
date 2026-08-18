@@ -157,7 +157,11 @@ _WARNED = {"placeholder": False}
 
 
 def _placeholder(full_prompt: str, size: tuple[int, int], dest: Path) -> Path:
-    """Deterministic abstract plate, used when diffusion is unavailable."""
+    """Deterministic abstract plate, used when diffusion is unavailable.
+
+    Writes a sidecar marker so the result is never mistaken for a real render:
+    once diffusion works, these are regenerated rather than served from cache.
+    """
     import numpy as np
     from PIL import Image
 
@@ -188,6 +192,7 @@ def _placeholder(full_prompt: str, size: tuple[int, int], dest: Path) -> Path:
     out += rng.normal(0, 3.0, out.shape)  # grain
 
     Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(dest)
+    dest.with_suffix(".placeholder").write_text("placeholder", encoding="utf-8")
     return dest
 
 
@@ -218,7 +223,11 @@ def generate(
     key = _key(full_prompt, negative, size, seed, steps, model)
     dest = out_dir / f"{key}.png"
 
-    if dest.exists():
+    # A placeholder is cached under the same key as a real render would be, so
+    # without this marker a fallback plate written while torch was missing would
+    # be served forever afterwards.
+    marker = dest.with_suffix(".placeholder")
+    if dest.exists() and not marker.exists():
         return GenResult(dest, full_prompt, seed, cached=True)
 
     try:
@@ -260,6 +269,7 @@ def generate(
         return GenResult(_placeholder(full_prompt, size, dest), full_prompt, seed, cached=False)
 
     image.save(dest)
+    marker.unlink(missing_ok=True)
     return GenResult(dest, full_prompt, seed, cached=False)
 
 
