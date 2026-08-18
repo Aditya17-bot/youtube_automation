@@ -9,6 +9,9 @@ for all of them; only the visual step differs.
 topic -> script -> voice -> visuals -> captions -> assemble -> package -> review -> publish
 ```
 
+Setting up channels, OAuth, scheduling and the affiliate sequence:
+see **[SETUP.md](SETUP.md)**.
+
 ## Quick start
 
 ```bash
@@ -94,9 +97,15 @@ output is consistently good.
 
 | Channel | Format | Shape | Earns from |
 |---|---|---|---|
-| `finance` - Simple Money | charts + typography, no GPU | 16:9, 3-4 min | ads + curated picks |
-| `story` - Nightfall Archive | horror fiction, AI images + camera moves | 16:9, 6-8 min | ads + curated picks |
-| `product` - Under Budget | AI stills + big text | 9:16, 40-55 s | Amazon affiliate |
+| `finance` - Simple Money | charts + typography, no GPU | 16:9, 3-4 min | ads |
+| `finance_short` | same, vertical | 9:16, 40-55 s | affiliate |
+| `story` - Nightfall Archive | horror fiction, AI images + camera moves | 16:9, 4-5 min | ads |
+| `story_short` | same, vertical | 9:16, 45-60 s | affiliate |
+| `product` - Under Budget | standalone Shorts | 9:16, 40-55 s | affiliate |
+
+A Short shares its parent's YouTube account (`youtube_account`) and topic bank
+(`script.topics_from`), so both cover the same subject and the Short funnels
+into the long video. Affiliate links live on the Shorts only.
 
 The horror channel is **explicitly fiction**, and enforced as such: passing
 invented horror off as a real account is deceptive and is the fabricated-content
