@@ -1,0 +1,78 @@
+# Vertical Shorts for the SAME YouTube channel as `finance`.
+#
+# Shorts and the long-form videos share one YouTube channel (youtube_account)
+# and one topic bank (script.topics_from), so a Short acts as a funnel into the
+# long video on the same subject. History is tracked per channel, so a topic
+# used in a long video is still available for a Short.
+#
+# This is where the affiliate links live. The long-form videos deliberately
+# carry none: an explainer that also sells reads as an advert, and the Short is
+# where a viewer is already in a browsing frame of mind.
+name: "Simple Money"
+format: finance
+youtube_account: finance         # uploads with secrets/token_finance.json
+auto_publish: false
+privacy: private
+cta: "Full explainer on the channel."
+
+script:
+  topics_from: finance           # same subjects as the long-form videos
+  target_words: [95, 135]        # ~40-55s at Shorts pace
+  duration_range: [35, 55]
+  beats: [6, 9]
+  tone: "quick, plain, one idea only; no preamble, no sign-off"
+  audience: "Indian beginners scrolling on a phone"
+  structure:
+    - {id: hook,     start: 0,  end: 4,  intent: "one blunt question or claim that stops the scroll"}
+    - {id: lesson,   start: 4,  end: 42, intent: "the single idea, shown with one number or one chart"}
+    - {id: takeaway, start: 42, end: 52, intent: "the one-line rule, then point to the full video"}
+
+voice:
+  provider: edge-tts
+  name: en-US-BrianMultilingualNeural
+  rate: "+8%"
+  pitch: "+0Hz"
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  encoder: h264_nvenc
+
+style:
+  background: "#0E1116"
+  surface:    "#161B22"
+  text:       "#E6EDF3"
+  muted:      "#8B949E"
+  accent:     "#4ADE80"
+  accent_alt: "#F87171"
+  grid:       "#232A33"
+
+thumbnail:
+  scrim: 0.80
+  style: "cinematic editorial photo, teal and amber grade, premium, sharp"
+  prompts:
+    - "a confident young businessman in a sharp navy suit on a rooftop at night, city lights below, dramatic rim lighting"
+    - "a man in a dark tailored suit seen from behind facing a wall of glowing financial charts in a dark room"
+    - "a stylish man in a charcoal suit at a minimal desk with a laptop, warm morning window light"
+
+music:
+  enabled: true
+  gain_db: -19
+  target_lufs: -14
+
+captions:
+  enabled: true
+  max_chars: 26
+
+affiliate:
+  associate_tag: ""              # set after Amazon Associates approval
+  marketplace: in
+  hub_url: ""
+  picks:
+    - {name: "Personal finance books", why: "The ideas in these videos, at book length.", search_query: "personal finance books india beginners"}
+    - {name: "Budget planner notebook", why: "Writing spending down beats any app, for most people.", search_query: "budget planner notebook expense tracker"}
+    - {name: "Document organiser box", why: "Somewhere for policies and tax papers to live.", search_query: "document organizer file storage box"}
+
+cadence:
+  per_week: 5

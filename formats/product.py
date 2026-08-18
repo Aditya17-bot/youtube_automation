@@ -74,6 +74,7 @@ Return ONLY this JSON:
 {{
   "topic_id": "{topic_id}",
   "title": "YouTube title, <=70 chars, no emoji, no fake urgency",
+  "thumb": "2-4 words for the thumbnail. A complete phrase, never a truncated sentence.",
   "description": "2-3 sentences for the description, plain text",
   "tags": ["10-14 lowercase youtube tags"],
   "items": [{{"name":"<=5 words","why":"<=18 words","search_query":"generic search words"}}],
@@ -123,6 +124,9 @@ def validate_script(data: object, channel: dict) -> None:
     for key in ("title", "description", "tags", "items", "sections"):
         if key not in data:
             raise KeyError(f"missing key: {key}")
+    thumb = data.get("thumb")
+    if thumb is not None and len(str(thumb).split()) > 6:
+        raise ValueError(f"thumb is {len(str(thumb).split())} words; max 6")
     if len(data["title"]) > 70:
         raise ValueError(f"title is {len(data['title'])} chars, max 70")
     if not isinstance(data["tags"], list) or not 8 <= len(data["tags"]) <= 16:

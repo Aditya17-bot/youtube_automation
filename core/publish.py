@@ -34,6 +34,19 @@ SCOPES = [
 SECRETS = PATHS.root / "secrets"
 
 
+def account_for(channel: str) -> str:
+    """Which OAuth identity a channel uploads with.
+
+    A Short and its long-form parent live on the SAME YouTube channel, so they
+    share one set of credentials. `youtube_account` in the Short's config points
+    at the parent; without it a channel authorises for itself.
+    """
+    try:
+        return load_channel(channel).get("youtube_account") or channel
+    except Exception:  # noqa: BLE001
+        return channel
+
+
 def _client_secret(channel: str) -> Path:
     path = SECRETS / f"client_secret_{channel}.json"
     if not path.exists():
@@ -52,6 +65,7 @@ def get_credentials(channel: str, *, interactive: bool = False):
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
 
+    channel = account_for(channel)
     SECRETS.mkdir(parents=True, exist_ok=True)
     token_file = _token_path(channel)
     creds = None

@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from core import affiliate, compliance
+from core import affiliate, compliance, thumbnail as thumb
 from core.script import iter_beats
 from core.theme import Theme
 
@@ -132,8 +132,13 @@ def build(script: dict, channel: dict, job_dir: Path, beat_timings: list[dict]) 
         "chapters": [[s, label] for s, label in chapters],
     }
 
-    thumb = render_thumbnail(script, channel, job_dir / "thumbnail.png")
-    meta["thumbnail"] = thumb.name
+    dest = job_dir / "thumbnail.png"
+    try:
+        thumb_path = thumb.render(script, channel, dest)
+    except Exception as exc:  # noqa: BLE001 - never lose a finished video to art
+        print(f"[thumbnail] image composite failed ({type(exc).__name__}); using text card")
+        thumb_path = render_thumbnail(script, channel, dest)
+    meta["thumbnail"] = thumb_path.name
 
     if channel.get("format") == "product" and script.get("items"):
         meta["items"] = script["items"]

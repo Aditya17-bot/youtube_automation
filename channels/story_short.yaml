@@ -1,0 +1,77 @@
+# Vertical horror Shorts for the SAME YouTube channel as `story`.
+#
+# Same YouTube account and same topic bank as the long-form horror videos, so a
+# Short is a cold-open teaser for the full story. Affiliate links live here
+# rather than on the long videos: a horror story interrupted by a shopping list
+# breaks the only thing the format has, which is atmosphere.
+name: "Nightfall Archive"
+format: story
+youtube_account: story           # uploads with secrets/token_story.json
+auto_publish: false
+privacy: private
+cta: "Full story on the channel."
+
+script:
+  mode: fiction
+  topics_from: story
+  target_words: [105, 150]       # ~45-60s at this read speed
+  duration_range: [40, 58]
+  beats: [8, 12]
+  tone: >-
+    one scene, one turn, no resolution. Present tense where it helps. End on the
+    image, not an explanation
+  audience: "horror viewers scrolling at night"
+
+voice:
+  provider: edge-tts
+  name: en-US-BrianMultilingualNeural
+  rate: "-4%"
+  pitch: "-4Hz"
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  encoder: h264_nvenc
+
+style:
+  background: "#050607"
+  surface:    "#0D0F11"
+  text:       "#DCD8D2"
+  muted:      "#7A756E"
+  accent:     "#8B1E1E"
+  accent_alt: "#4A5A63"
+  grid:       "#15181B"
+  image_style: >-
+    cinematic horror still, desaturated, deep shadows, fog, single weak light,
+    35mm grain, empty, unsettling, no people, no text
+
+thumbnail:
+  scrim: 0.86
+  style: "cinematic horror photo, desaturated, deep blacks, fog, film grain"
+  prompts:
+    - "a pale translucent ghostly figure at the end of a dark corridor, one flickering tube light, thick fog"
+    - "a faint humanoid shape forming in heavy fog on an empty road at night, single sodium streetlamp"
+    - "a shadowy apparition reflected in an antique mirror in an unlit room, candle flame, dust in the air"
+    - "a white shrouded figure standing waist-deep in fog in a field at night, distant farmhouse light"
+
+music:
+  enabled: true
+  gain_db: -22
+  target_lufs: -14
+
+captions:
+  enabled: true
+  max_chars: 26
+
+affiliate:
+  associate_tag: ""
+  marketplace: in
+  hub_url: ""
+  picks:
+    - {name: "Horror short story collections", why: "Where this kind of slow-burn dread comes from.", search_query: "horror short story collection paperback"}
+    - {name: "Clip-on reading light", why: "For reading these at night without lighting the room.", search_query: "clip on book reading light rechargeable"}
+    - {name: "Over-ear headphones", why: "Most of the atmosphere here is in the audio.", search_query: "over ear headphones wired"}
+
+cadence:
+  per_week: 5

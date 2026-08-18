@@ -10,7 +10,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from core.config import PATHS
+from core.config import PATHS, load_channel
 from core.script import load_topics
 
 
@@ -36,8 +36,21 @@ def record(channel: str, topic_id: str, title: str) -> None:
     _history_path(channel).write_text(json.dumps(history, indent=2), encoding="utf-8")
 
 
+def topic_bank_for(channel: str) -> str:
+    """Which topic bank a channel reads.
+
+    Short-form channels set `script.topics_from` to their long-form parent, so
+    both cover the same subject. History stays per channel, so a topic used in
+    a long video is still available for a Short.
+    """
+    try:
+        return load_channel(channel)["script"].get("topics_from") or channel
+    except Exception:  # noqa: BLE001 - a missing config is the caller's problem
+        return channel
+
+
 def next_topic(channel: str, explicit: str | None = None) -> dict:
-    topics = load_topics(channel)
+    topics = load_topics(topic_bank_for(channel))
     if not topics:
         raise RuntimeError(f"no topic bank for channel {channel!r}")
 
@@ -58,6 +71,6 @@ def next_topic(channel: str, explicit: str | None = None) -> dict:
 
 
 def stats(channel: str) -> dict:
-    topics = load_topics(channel)
+    topics = load_topics(topic_bank_for(channel))
     used = {h["topic_id"] for h in load_history(channel)}
     return {"total": len(topics), "used": len(used), "remaining": len(topics) - len(used)}

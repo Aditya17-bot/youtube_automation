@@ -15,9 +15,9 @@ cta: "Subscribe to Nightfall Archive for a new story every week."
 
 script:
   mode: fiction
-  target_words: [900, 1150]       # ~6-8 min at 132 wpm
-  duration_range: [360, 540]
-  beats: [30, 42]
+  target_words: [560, 700]        # ~4-5 min at this read speed
+  duration_range: [230, 320]
+  beats: [20, 28]
   tone: >-
     quiet, controlled dread; a narrator who is calm even when the story is not.
     Slow build, concrete sensory detail, no jump-scare punctuation, no shouting
@@ -58,17 +58,22 @@ captions:
   enabled: true
   max_chars: 44
 
-affiliate:
-  associate_tag: ""               # set after Amazon Associates approval
-  marketplace: in
-  hub_url: ""
-  # Curated once, by hand, and appended to every description. Not model-written:
-  # a horror script has no business inventing product claims.
-  picks:
-    - {name: "Horror short story collections", why: "Where this kind of slow-burn dread comes from.", search_query: "horror short story collection paperback"}
-    - {name: "Warm reading light", why: "For reading these at night without lighting the whole room.", search_query: "clip on book reading light rechargeable"}
-    - {name: "Over-ear headphones", why: "Most of the atmosphere here is in the audio.", search_query: "over ear headphones wired"}
-    - {name: "Weighted blanket", why: "Unrelated to the horror. Genuinely helps you sleep after.", search_query: "weighted blanket single"}
+thumbnail:
+  scrim: 0.86
+  # Kept short: CLIP truncates past 77 tokens, and the prompt matters more
+  # than the style suffix.
+  style: "cinematic horror photo, desaturated, deep blacks, fog, film grain"
+  # Picked deterministically per topic, so a channel looks like one series while
+  # no two videos share a thumbnail.
+  prompts:
+    - "a pale translucent ghostly figure standing far down a dark motel corridor, one flickering fluorescent tube, thick fog"
+    - "a spectral woman in a white dress dissolving into mist at the foot of a wooden staircase, moonlight through a broken window"
+    - "a faint humanoid shape forming in heavy fog on an empty road at night, single sodium streetlamp"
+    - "a shadowy apparition reflected in an antique mirror in an unlit room, candle flame, dust suspended in the air"
+    - "a translucent silhouette standing in a doorway backlit by cold blue light, long empty hallway"
+    - "a ghostly face pressed faintly against a rain-streaked window at night, porch light, empty road beyond"
+    - "an empty rocking chair in a derelict room with a pale figure barely visible in the shadows behind it"
+    - "a white shrouded figure standing waist-deep in fog in a field at night, distant farmhouse light"
 
 cadence:
   per_week: 2

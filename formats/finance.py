@@ -556,9 +556,7 @@ AUDIENCE: {audience}
 Short sentences. Natural pauses. No complex jargon. Calm, smart, easy for beginners.
 
 STRUCTURE (must follow exactly):
-  Hook      0:00-0:15  - {hook_intent}
-  Lesson    0:15-3:00  - teach ONE clear concept using a simple real-life example or story
-  Takeaway  3:00-3:30  - one golden rule, then a soft reminder to subscribe for more simple money tips
+{structure}
 
 LENGTH: the combined `vo` text across all beats must total {w_lo}-{w_hi} words.
 That is a hard requirement - count them.
@@ -575,7 +573,7 @@ HARD COMPLIANCE RULES (the script is auto-rejected if broken):
 
 {visual_contract}
 
-Break the script into 16-26 beats. Each beat = 1-3 spoken sentences plus ONE visual.
+Break the script into {beat_lo}-{beat_hi} beats. Each beat = 1-3 spoken sentences plus ONE visual.
 Vary visual types; do not use the same type more than twice in a row.
 
 Return ONLY this JSON:
@@ -583,6 +581,7 @@ Return ONLY this JSON:
   "topic_id": "{topic_id}",
   "title": "YouTube title, <=70 chars, curiosity-driven, no clickbait lies, no emoji",
   "golden_rule": "the single rule the viewer should remember, <=16 words",
+  "thumb": "2-4 words for the thumbnail. A complete phrase or question, never a truncated sentence. No punctuation except a question mark.",
   "description": "3-5 sentences for the YouTube description, plain text",
   "tags": ["10-14 lowercase youtube tags"],
   "sections": [
@@ -602,18 +601,30 @@ SECTION_IDS = ["hook", "lesson", "takeaway"]
 COMPUTE_REQUIRED = {"line_chart", "bar_chart", "stat"}
 
 
+def _structure_lines(sc: dict) -> str:
+    """Render the section plan from config, so shorts and longform differ only
+    in their YAML rather than in this module."""
+    rows = []
+    for part in sc["structure"]:
+        start, end = int(part["start"]), int(part["end"])
+        span = f"{start // 60}:{start % 60:02d}-{end // 60}:{end % 60:02d}"
+        rows.append(f"  {part['id'].title():<9} {span:<11} - {part['intent']}")
+    return "\n".join(rows)
+
+
 def build_prompt(topic: dict, channel: dict) -> str:
     sc = channel["script"]
     w_lo, w_hi = sc["target_words"]
     dur_lo, dur_hi = sc["duration_range"]
-    hook_intent = next(s["intent"] for s in sc["structure"] if s["id"] == "hook")
+    beat_lo, beat_hi = sc.get("beats", [16, 26])
     return PROMPT.format(
+        structure=_structure_lines(sc),
+        beat_lo=beat_lo, beat_hi=beat_hi,
         channel_name=channel["name"],
         topic_title=topic["title"],
         topic_id=topic["id"],
         tone=sc["tone"],
         audience=sc["audience"],
-        hook_intent=hook_intent,
         dur_lo=dur_lo, dur_hi=dur_hi,
         w_lo=w_lo, w_hi=w_hi,
         visual_contract=VISUAL_CONTRACT,
@@ -632,6 +643,9 @@ def validate_script(data: object, channel: dict) -> None:
     for key in ("title", "golden_rule", "description", "tags", "sections"):
         if key not in data:
             raise KeyError(f"missing key: {key}")
+    thumb = data.get("thumb")
+    if thumb is not None and len(str(thumb).split()) > 6:
+        raise ValueError(f"thumb is {len(str(thumb).split())} words; max 6")
     if len(data["title"]) > 70:
         raise ValueError(f"title is {len(data['title'])} chars, max 70")
     if not isinstance(data["tags"], list) or not 8 <= len(data["tags"]) <= 16:
@@ -642,8 +656,9 @@ def validate_script(data: object, channel: dict) -> None:
         raise ValueError(f"sections must be exactly {SECTION_IDS}, got {ids}")
 
     beats = [b for s in data["sections"] for b in s.get("beats", [])]
-    if not 12 <= len(beats) <= 30:
-        raise ValueError(f"{len(beats)} beats; need 16-26")
+    beat_lo, beat_hi = channel["script"].get("beats", [16, 26])
+    if not beat_lo - 4 <= len(beats) <= beat_hi + 4:
+        raise ValueError(f"{len(beats)} beats; need {beat_lo}-{beat_hi}")
 
     for i, beat in enumerate(beats):
         if not beat.get("vo", "").strip():
