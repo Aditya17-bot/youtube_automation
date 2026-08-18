@@ -1,0 +1,24 @@
+# Story topics: real, documented, and genuinely uncertain.
+# Honesty about what is unknown is the format's appeal - and it keeps the
+# channel clear of the fabricated-history trap that gets channels demonetised.
+topics:
+  - {id: sodium-lamp-town,    title: "The town that went dark for forty years"}
+  - {id: dyatlov,             title: "What actually happened at Dyatlov Pass"}
+  - {id: roanoke,             title: "The colony that vanished and left one word"}
+  - {id: antikythera,         title: "The machine that was two thousand years early"}
+  - {id: voynich,             title: "The book nobody has ever read"}
+  - {id: tunguska,            title: "The morning the sky fell over Siberia"}
+  - {id: mary-celeste,        title: "The ship that sailed on without her crew"}
+  - {id: bloop,               title: "The loudest sound ever recorded underwater"}
+  - {id: wow-signal,          title: "Seventy-two seconds from somewhere else"}
+  - {id: nazca,               title: "Drawings meant to be seen from a place nobody could reach"}
+  - {id: pompeii-scrolls,     title: "The library that burned but did not disappear"}
+  - {id: somerton-man,        title: "The man on the beach with no name"}
+  - {id: green-children,      title: "The children who came out of the ground"}
+  - {id: baltic-anomaly,      title: "The shape on the floor of the Baltic Sea"}
+  - {id: kola-borehole,       title: "The deepest hole humans ever dug, and why we stopped"}
+  - {id: lost-cosmonauts,     title: "The signals that suggested someone got there first"}
+  - {id: hessdalen,           title: "The valley where the lights will not stop"}
+  - {id: eilean-mor,          title: "Three lighthouse keepers and an unfinished log"}
+  - {id: tarim-mummies,       title: "The wrong people in the wrong desert"}
+  - {id: derinkuyu,           title: "The city carved downward for twenty thousand people"}

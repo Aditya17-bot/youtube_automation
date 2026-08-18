@@ -1,0 +1,59 @@
+# Product roundup Shorts. Affiliate-first channel.
+#
+# associate_tag stays empty until Amazon Associates approves the account -
+# links still work meanwhile, they just do not earn. Approval starts a
+# 180-day / 3-qualifying-sales clock, so apply only once the channel and the
+# hub site have real traffic.
+name: "Under Budget"
+format: product
+auto_publish: false
+privacy: private
+cta: "Subscribe for one useful find a day."
+
+affiliate:
+  associate_tag: ""               # e.g. "yourtag-21" once approved
+  marketplace: in
+  hub_url: ""                     # e.g. "https://<user>.github.io/under-budget"
+
+script:
+  target_words: [95, 140]         # ~40-55s at Shorts pace
+  duration_range: [35, 58]
+  items: [3, 5]
+  tone: "quick, plain, useful; no hype, no hard sell"
+  audience: "Indian shoppers browsing on a phone, deciding in seconds"
+
+voice:
+  provider: edge-tts
+  name: en-US-BrianMultilingualNeural
+  rate: "+6%"                     # Shorts run faster than longform
+  pitch: "+0Hz"
+
+video:
+  width: 1080
+  height: 1920                    # 9:16 vertical
+  fps: 30
+  encoder: h264_nvenc
+
+style:
+  background: "#0B0E13"
+  surface:    "#151A21"
+  text:       "#F2F5F8"
+  muted:      "#96A0AC"
+  accent:     "#FFB020"
+  accent_alt: "#4ADE80"
+  grid:       "#1F252D"
+  image_style: >-
+    clean product photography, plain seamless studio background, soft even
+    lighting, centred, minimal, no text, no logo, no people
+
+music:
+  enabled: true
+  gain_db: -19
+  target_lufs: -14
+
+captions:
+  enabled: true
+  max_chars: 26                   # narrow frame needs short lines
+
+cadence:
+  per_day: 1

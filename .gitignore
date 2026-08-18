@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Generated media and intermediate render artefacts
+out/
+# Diffusion output is a regenerable cache keyed by prompt hash, not source
+assets/generated/
+assets/music/*.wav
+assets/music/*.mp3
+
+# OAuth client secrets and cached refresh tokens - never commit
+secrets/
+
+# Per-channel topic history
+state/

@@ -1,0 +1,28 @@
+# SEBI-safe topic bank: financial literacy only.
+# Nothing here names a security, fund, or broker, or implies a buy/sell action.
+# `visual` is a hint to the script generator, not a hard constraint.
+topics:
+  - {id: compound-interest,     title: "How compound interest actually works", visual: line_chart}
+  - {id: rule-of-72,            title: "The Rule of 72: doubling your money in your head", visual: stat}
+  - {id: sip-mechanics,         title: "What an SIP is, and why rupee-cost averaging works", visual: bar_chart}
+  - {id: start-early,           title: "Why starting 5 years earlier beats investing twice as much", visual: line_chart}
+  - {id: expense-ratio,         title: "What a 1% fee really costs you over 20 years", visual: split_compare}
+  - {id: inflation-idle-cash,   title: "What inflation quietly does to idle savings", visual: line_chart}
+  - {id: emergency-fund,        title: "Emergency fund: how much, and where to keep it", visual: list_reveal}
+  - {id: budget-50-30-20,       title: "The 50/30/20 rule, adapted for an Indian salary", visual: split_compare}
+  - {id: emi-amortisation,      title: "How an EMI is actually split between interest and principal", visual: bar_chart}
+  - {id: simple-vs-compound,    title: "Simple interest vs compound interest, seen side by side", visual: split_compare}
+  - {id: lifestyle-inflation,   title: "Why a raise never seems to make you richer", visual: line_chart}
+  - {id: insurance-vs-invest,   title: "Why mixing insurance and investing costs you both ways", visual: split_compare}
+  - {id: what-is-an-index,      title: "What a stock index actually measures", visual: line_chart}
+  - {id: nav-and-units,         title: "How mutual funds are structured: NAV, units, and AMCs", visual: list_reveal}
+  - {id: direct-vs-regular,     title: "Direct vs regular plans: where the difference goes", visual: split_compare}
+  - {id: credit-score,          title: "What actually moves your credit score", visual: list_reveal}
+  - {id: ppf-epf-nps,           title: "PPF, EPF and NPS: how each one is built", visual: split_compare}
+  - {id: debt-payoff-order,     title: "Two ways to clear debt, and which finishes sooner", visual: bar_chart}
+  - {id: liquidity,             title: "Liquidity: why some money should stay boring", visual: list_reveal}
+  - {id: salary-slip,           title: "How to read your salary slip, line by line", visual: list_reveal}
+  - {id: 80c-basics,            title: "Section 80C, explained without the jargon", visual: list_reveal}
+  - {id: real-returns,          title: "Nominal vs real returns: the number that matters", visual: line_chart}
+  - {id: cost-of-waiting,       title: "The cost of waiting one year to start", visual: stat}
+  - {id: small-leaks,           title: "How small daily spends add up over a decade", visual: stat}

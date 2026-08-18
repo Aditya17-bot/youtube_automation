@@ -1,0 +1,18 @@
+# Roundup themes, not specific products.
+# Each becomes a Short listing 3-5 generic CATEGORIES with search links.
+topics:
+  - {id: desk-tidy,        title: "5 things that make a messy desk usable"}
+  - {id: small-kitchen,    title: "4 kitchen tools for a very small kitchen"}
+  - {id: wfh-comfort,      title: "5 cheap upgrades for working from home"}
+  - {id: cable-chaos,      title: "4 fixes for cable chaos"}
+  - {id: better-sleep,     title: "5 things that genuinely help you sleep"}
+  - {id: tiny-bathroom,    title: "4 space savers for a tiny bathroom"}
+  - {id: travel-light,     title: "5 things that make packing lighter"}
+  - {id: phone-photo,      title: "4 accessories that improve phone photos"}
+  - {id: study-focus,      title: "5 desk things that help you concentrate"}
+  - {id: monsoon-ready,    title: "4 things worth owning before the monsoon"}
+  - {id: first-flat,       title: "5 things nobody buys for a first flat but should"}
+  - {id: laptop-life,      title: "4 accessories that extend a laptop's life"}
+  - {id: home-workout,     title: "5 pieces of kit for a home workout corner"}
+  - {id: kitchen-storage,  title: "4 ways to store food that actually works"}
+  - {id: winter-basics,    title: "5 inexpensive things for a cold room"}

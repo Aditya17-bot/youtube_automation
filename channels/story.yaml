@@ -1,0 +1,51 @@
+# Narrated story channel: AI images with slow camera moves.
+# Global English audience, general-audience RPM, low copyright exposure.
+name: "The Long Quiet"
+format: story
+auto_publish: false
+privacy: private
+cta: "Subscribe to The Long Quiet for one story a week."
+
+script:
+  target_words: [900, 1150]       # ~6-8 min at 138 wpm
+  duration_range: [360, 540]
+  beats: [30, 42]
+  tone: "measured, curious, slightly cold; documentary narration, never breathless"
+  audience: "adults who like unsolved mysteries, deep history and quiet dread"
+
+voice:
+  provider: edge-tts
+  name: en-US-BrianMultilingualNeural
+  rate: "-6%"
+  pitch: "-2Hz"
+
+video:
+  width: 1920
+  height: 1080
+  fps: 30
+  encoder: h264_nvenc
+
+style:
+  background: "#07090C"
+  surface:    "#11151A"
+  text:       "#E8E6E1"
+  muted:      "#8A8781"
+  accent:     "#C9A227"
+  accent_alt: "#7C9CB0"
+  grid:       "#1B2026"
+  # Appended to every image prompt so all shots look like one series.
+  image_style: >-
+    cinematic still, muted desaturated palette, volumetric haze, soft rim light,
+    35mm film grain, shallow depth of field, moody, no text
+
+music:
+  enabled: true
+  gain_db: -22
+  target_lufs: -14
+
+captions:
+  enabled: true
+  max_chars: 44
+
+cadence:
+  per_week: 3

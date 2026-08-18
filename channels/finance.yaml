@@ -1,0 +1,55 @@
+# Personal-finance literacy channel (India-oriented, faceless, minimalist).
+# Deliberately scoped to financial LITERACY, not securities advice: compound
+# interest, SIP mechanics, budgeting, fees. No tickers, no calls, no targets.
+name: "Simple Money"
+format: finance
+auto_publish: false
+privacy: private
+cta: "Subscribe to Simple Money for simple money explainers every week."
+
+script:
+  target_words: [400, 500]
+  duration_range: [180, 240]      # 3-4 minutes
+  tone: "calm, smart, plain-spoken; short sentences; natural pauses; no jargon"
+  audience: "Indian beginners who earn a salary and want money to make sense"
+  structure:
+    - {id: hook,     start: 0,   end: 15,  intent: "relatable money question or bold true statement"}
+    - {id: lesson,   start: 15,  end: 180, intent: "one concept, taught with a real-life example"}
+    - {id: takeaway, start: 180, end: 210, intent: "one golden rule, then soft subscribe CTA"}
+
+voice:
+  provider: edge-tts
+  name: en-US-BrianMultilingualNeural    # swap to en-IN-PrabhatNeural for an Indian accent
+  rate: "-8%"                     # ~138 wpm: calm, steady
+  pitch: "+0Hz"
+
+video:
+  width: 1920
+  height: 1080
+  fps: 30
+  encoder: h264_nvenc
+  crf: 20
+
+style:
+  background: "#0E1116"
+  surface:    "#161B22"
+  text:       "#E6EDF3"
+  muted:      "#8B949E"
+  accent:     "#4ADE80"
+  accent_alt: "#F87171"
+  grid:       "#232A33"
+  font_head:  "Inter"
+  font_body:  "Inter"
+
+music:
+  enabled: true
+  gain_db: -20                    # bed level before ducking; audible in pauses
+  target_lufs: -14                # streaming loudness target for the final mix
+
+captions:
+  enabled: true
+  style: minimal_lower_third
+  max_chars: 42
+
+cadence:
+  per_week: 3
