@@ -64,9 +64,27 @@ authorise once in a browser; after that it runs unattended.
 2. **APIs & Services → Library → YouTube Data API v3 → Enable.**
 3. **OAuth consent screen** → External → fill in the basics → **PUBLISH APP**.
 
+   **App name:** anything neutral, e.g. `Faceless Studio Uploader`. It is only a
+   label on the consent screen you see when authorising, and it does not have to
+   match a channel name.
+
+   > Do **not** put "YouTube", "Google" or "Gmail" in the app name. Google's
+   > branding rules reject app names containing their trademarks.
+
+   Support email and developer contact are your own address. You do not need to
+   add scopes here - the code requests them at auth time.
+
    > **Do not skip publishing.** While the consent screen sits in "Testing",
    > Google expires refresh tokens after **7 days** and every scheduled upload
    > breaks until you re-authorise by hand.
+
+   On first authorisation you will see **"Google hasn't verified this app"**.
+   That is expected: `youtube.upload` is a sensitive scope, and unverified apps
+   are capped at 100 users. You are the only user, so choose
+   **Advanced → Go to (app name)**. Verification is not needed for personal use.
+
+   One project and one OAuth app cover both channels - you simply authorise
+   twice, picking a different Brand Account each time.
 
 4. **Credentials → Create credentials → OAuth client ID → Desktop app** →
    download the JSON.
