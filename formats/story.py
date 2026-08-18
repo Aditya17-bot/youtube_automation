@@ -10,6 +10,7 @@ before this module ever sees the file.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -36,26 +37,40 @@ Also give each beat a "move", one of: zoom_in, zoom_out, pan_left, pan_right,
 pan_up, pan_down. Vary it between consecutive beats.
 """
 
-PROMPT = """You are a documentary scriptwriter for a faceless YouTube channel
-called "{channel_name}".
-
-Write a {dur_lo}-{dur_hi} second narrated story about: {topic_title}
-
-TONE: {tone}
-AUDIENCE: {audience}
-
-Write it as a story, not a list. Build tension, then resolve it. Use short
-sentences and concrete detail. Open cold - the first sentence must make someone
-stop scrolling. No "welcome back to the channel", no intro branding.
-
-LENGTH: the combined `vo` text must total {w_lo}-{w_hi} words. Count them.
-
-RULES:
+FACTUAL_RULES = """RULES:
   - Everything stated as fact must be genuinely true. Where something is
     disputed or unknown, say so plainly - that honesty is the format's appeal.
   - No real living private individuals as subjects.
   - Do not describe graphic violence or gore.
+"""
 
+FICTION_RULES = """RULES:
+  - This is ORIGINAL FICTION. Invent the events, places and people.
+  - Never frame it as a true story, a real account, or something that happened
+    to a real person. No "based on true events", no fake locations presented as
+    real, no real named towns tied to invented deaths.
+  - Dread comes from atmosphere, restraint and implication - not from gore.
+    No graphic injury, torture, mutilation or body horror.
+  - No sexual content. No depiction of self-harm or suicide method.
+  - No children as victims.
+  - Leave the final image unresolved rather than explaining the horror away.
+"""
+
+PROMPT = """You are a scriptwriter for a faceless YouTube channel
+called "{channel_name}".
+
+Write a {dur_lo}-{dur_hi} second narrated story: {topic_title}
+
+TONE: {tone}
+AUDIENCE: {audience}
+
+Write it as a story, not a list. Build tension, then turn it. Use short
+sentences and concrete sensory detail. Open cold - the first sentence must make
+someone stop scrolling. No "welcome back to the channel", no intro branding.
+
+LENGTH: the combined `vo` text must total {w_lo}-{w_hi} words. Count them.
+
+{rules}
 {visual_contract}
 
 Break the story into {beat_lo}-{beat_hi} beats. Each beat is 2-4 spoken
@@ -78,6 +93,17 @@ Return ONLY this JSON:
 """
 
 SECTION_IDS = ["open", "build", "turn", "close"]
+
+# Invented horror must never claim to be real: it is deceptive, and it is the
+# fabricated-content pattern that costs channels their monetisation.
+_FICTION_BANNED = [
+    (re.compile(r"based on (?:a )?true (?:story|events)", re.I), "truth claim"),
+    (re.compile(r"this (?:really|actually) happened", re.I), "truth claim"),
+    (re.compile(r"a true story", re.I), "truth claim"),
+    (re.compile(r"real(?:-| )life account", re.I), "truth claim"),
+    (re.compile(r"true scary stor(?:y|ies)", re.I), "truth claim"),
+    (re.compile(r"documented case", re.I), "truth claim"),
+]
 ALLOWED_MOVES = {"zoom_in", "zoom_out", "pan_left", "pan_right", "pan_up", "pan_down"}
 
 
@@ -86,7 +112,9 @@ def build_prompt(topic: dict, channel: dict) -> str:
     w_lo, w_hi = sc["target_words"]
     dur_lo, dur_hi = sc["duration_range"]
     beat_lo, beat_hi = sc.get("beats", [28, 45])
+    mode = sc.get("mode", "factual")
     return PROMPT.format(
+        rules=FICTION_RULES if mode == "fiction" else FACTUAL_RULES,
         channel_name=channel["name"],
         topic_title=topic["title"],
         topic_id=topic["id"],
@@ -100,8 +128,6 @@ def build_prompt(topic: dict, channel: dict) -> str:
 
 
 def validate_script(data: object, channel: dict) -> None:
-    import re
-
     if not isinstance(data, dict):
         raise TypeError("top level must be a JSON object")
     for key in ("title", "description", "tags", "sections"):
@@ -131,9 +157,20 @@ def validate_script(data: object, channel: dict) -> None:
             raise ValueError(f"beat {i}: unknown move {move!r}")
 
     w_lo, w_hi = channel["script"]["target_words"]
-    words = len(re.findall(r"\b[\w']+\b", " ".join(b["vo"] for b in beats)))
+    spoken = " ".join(b["vo"] for b in beats)
+    words = len(re.findall(r"\b[\w']+\b", spoken))
     if not w_lo - 120 <= words <= w_hi + 160:
         raise ValueError(f"script is {words} words; need {w_lo}-{w_hi}")
+
+    # Enforced rather than merely requested: a model told "this is fiction"
+    # will still reach for "based on true events" because it reads as a stronger
+    # hook.
+    if channel["script"].get("mode") == "fiction":
+        blob = f"{spoken} {data.get('description', '')} {data.get('title', '')}"
+        for rx, why in _FICTION_BANNED:
+            match = rx.search(blob)
+            if match:
+                raise ValueError(f"fiction presented as fact: {match.group(0)!r} ({why})")
 
 
 def _zoompan(move: str, total_frames: int, width: int, height: int, fps: int) -> str:

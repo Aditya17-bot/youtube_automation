@@ -43,6 +43,11 @@ def build_description(script: dict, channel: dict, chapters: list[tuple[float, s
         slug = script.get("topic_id") or ""
         parts.append(affiliate.description_block(slug, script, channel))
         parts.append("")
+    else:
+        block = affiliate.static_block(channel)
+        if block:
+            parts.append(block)
+            parts.append("")
 
     parts.append(channel.get("cta", f"Subscribe to {channel['name']} for more."))
     return "\n".join(parts).strip()
@@ -134,6 +139,8 @@ def build(script: dict, channel: dict, job_dir: Path, beat_timings: list[dict]) 
         meta["items"] = script["items"]
         page = affiliate.write_video_page(script.get("topic_id") or "video", script, channel)
         meta["hub_page"] = page.name
+    elif channel.get("affiliate", {}).get("picks"):
+        meta["hub_page"] = affiliate.write_channel_page(channel).name
 
     (job_dir / "metadata.json").write_text(
         json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"

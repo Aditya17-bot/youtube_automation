@@ -51,5 +51,17 @@ captions:
   style: minimal_lower_third
   max_chars: 42
 
+affiliate:
+  associate_tag: ""               # set after Amazon Associates approval
+  marketplace: in
+  hub_url: ""
+  # Curated once, by hand. Never model-generated: a finance script must not
+  # invent product claims, and these must stay category-level, not advice.
+  picks:
+    - {name: "Personal finance books", why: "The ideas in these videos, at book length.", search_query: "personal finance books india beginners"}
+    - {name: "Budget planner notebook", why: "Writing spending down beats any app, for most people.", search_query: "budget planner notebook expense tracker"}
+    - {name: "Document organiser box", why: "Somewhere for policies, statements and tax papers to live.", search_query: "document organizer file storage box"}
+    - {name: "Financial calculator", why: "Useful if you want to check the maths yourself.", search_query: "financial calculator"}
+
 cadence:
   per_week: 3

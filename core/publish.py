@@ -24,7 +24,8 @@ import json
 from pathlib import Path
 
 from core.config import PATHS, load_channel
-from core.review import STATUS_APPROVED, STATUS_PUBLISHED, approved, review_dir, set_status
+from core.review import (STATUS_APPROVED, STATUS_PUBLISHED, approved, human,
+                         purge_published, purge_work, review_dir, set_status)
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
@@ -85,8 +86,13 @@ def _service(channel: str, *, interactive: bool = False):
     return build_service("youtube", "v3", credentials=get_credentials(channel, interactive=interactive))
 
 
-def upload(channel: str, slug: str, *, privacy: str | None = None) -> str:
-    """Upload one reviewed video. Returns the new video id."""
+def upload(channel: str, slug: str, *, privacy: str | None = None,
+           keep_local: bool = False) -> str:
+    """Upload one reviewed video. Returns the new video id.
+
+    Local renders are purged afterwards unless `keep_local` is set: an 8-minute
+    1080p story video is ~440 MB, which fills a disk quickly at three a week.
+    """
     from googleapiclient.http import MediaFileUpload
 
     cfg = load_channel(channel)
@@ -129,10 +135,18 @@ def upload(channel: str, slug: str, *, privacy: str | None = None) -> str:
         print("  thumbnail set")
 
     set_status(channel, slug, STATUS_PUBLISHED, note=f"https://youtu.be/{video_id}")
+
+    # YouTube now holds the copy that matters, so the local renders are dead
+    # weight. Metadata and status stay, which is what topic history reads.
+    freed = 0 if keep_local else purge_work(channel, slug) + purge_published(channel, slug)
+    if freed:
+        print(f"  reclaimed {human(freed)}")
+
     return video_id
 
 
-def publish_approved(channel: str, *, limit: int = 5, privacy: str | None = None) -> list[str]:
+def publish_approved(channel: str, *, limit: int = 5, privacy: str | None = None,
+                     keep_local: bool = False) -> list[str]:
     ready = approved(channel)[:limit]
     if not ready:
         print("nothing approved")
@@ -141,7 +155,8 @@ def publish_approved(channel: str, *, limit: int = 5, privacy: str | None = None
     ids = []
     for item in ready:
         print(f"{item['channel']}/{item['slug']}")
-        ids.append(upload(item["channel"], item["slug"], privacy=privacy))
+        ids.append(upload(item["channel"], item["slug"], privacy=privacy,
+                          keep_local=keep_local))
     return ids
 
 
@@ -158,11 +173,15 @@ if __name__ == "__main__":
     p_one.add_argument("slug")
     p_one.add_argument("--channel", default="finance")
     p_one.add_argument("--privacy", choices=["private", "unlisted", "public"])
+    p_one.add_argument("--keep-local", action="store_true",
+                        help="do not purge local renders after upload")
 
     p_all = sub.add_parser("run", help="upload everything approved")
     p_all.add_argument("--channel", default="finance")
     p_all.add_argument("--limit", type=int, default=5)
     p_all.add_argument("--privacy", choices=["private", "unlisted", "public"])
+    p_all.add_argument("--keep-local", action="store_true",
+                        help="do not purge local renders after upload")
 
     args = ap.parse_args()
 
@@ -172,6 +191,7 @@ if __name__ == "__main__":
         for item in me.get("items", []):
             print(f"authorised as: {item['snippet']['title']}")
     elif args.cmd == "upload":
-        upload(args.channel, args.slug, privacy=args.privacy)
+        upload(args.channel, args.slug, privacy=args.privacy, keep_local=args.keep_local)
     else:
-        publish_approved(args.channel, limit=args.limit, privacy=args.privacy)
+        publish_approved(args.channel, limit=args.limit, privacy=args.privacy,
+                         keep_local=args.keep_local)

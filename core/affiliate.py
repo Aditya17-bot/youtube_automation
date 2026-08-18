@@ -175,3 +175,53 @@ def description_block(slug: str, script: dict, channel: dict) -> str:
         lines.append(f"- {item['name']}: {link_for(item, channel)}")
     lines += ["", DISCLOSURE]
     return "\n".join(lines)
+
+
+def static_block(channel: dict) -> str:
+    """Affiliate section for channels whose picks are curated, not scripted.
+
+    The finance and horror channels have no per-video product list - and should
+    not, since neither script should be inventing product claims. Instead each
+    channel config carries a hand-written `affiliate.picks` list that is
+    appended to every description unchanged.
+    """
+    aff = channel.get("affiliate", {})
+    picks = aff.get("picks") or []
+    if not picks:
+        return ""
+
+    lines: list[str] = []
+    base = (aff.get("hub_url") or "").rstrip("/")
+    if base:
+        lines += [f"Everything mentioned: {base}/index.html", ""]
+
+    lines.append("THINGS WORTH OWNING")
+    for item in picks:
+        lines.append(f"- {item['name']}: {link_for(item, channel)}")
+        if item.get("why"):
+            lines.append(f"  {item['why']}")
+    lines += ["", DISCLOSURE]
+    return "\n".join(lines)
+
+
+def write_channel_page(channel: dict) -> Path:
+    """A single hub page for a channel's curated picks."""
+    picks = channel.get("affiliate", {}).get("picks") or []
+    rows = "".join(
+        "<div class=\"item\">"
+        f"<h2>{html.escape(p['name'])}</h2>"
+        f"<p>{html.escape(p.get('why', ''))}</p>"
+        f"<a class=\"btn\" href=\"{html.escape(link_for(p, channel))}\" "
+        "rel=\"nofollow sponsored noopener\" target=\"_blank\">See it on Amazon</a>"
+        "</div>"
+        for p in picks
+    )
+    body = (
+        f"<h1>{html.escape(channel['name'])}</h1>"
+        "<p class=\"sub\">Things mentioned on the channel.</p>"
+        + (rows or "<p class=\"sub\">Nothing listed yet.</p>")
+        + f"<p class=\"disc\">{html.escape(DISCLOSURE)}</p>"
+    )
+    dest = hub_dir() / f"{channel['_slug']}.html"
+    dest.write_text(_page(channel["name"], body), encoding="utf-8")
+    return dest

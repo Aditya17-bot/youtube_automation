@@ -1,24 +1,23 @@
-# Story topics: real, documented, and genuinely uncertain.
-# Honesty about what is unknown is the format's appeal - and it keeps the
-# channel clear of the fabricated-history trap that gets channels demonetised.
+# Original horror premises. Each is a situation, not a plot - the script
+# invents the events. Nothing here references a real place, person or death.
 topics:
-  - {id: sodium-lamp-town,    title: "The town that went dark for forty years"}
-  - {id: dyatlov,             title: "What actually happened at Dyatlov Pass"}
-  - {id: roanoke,             title: "The colony that vanished and left one word"}
-  - {id: antikythera,         title: "The machine that was two thousand years early"}
-  - {id: voynich,             title: "The book nobody has ever read"}
-  - {id: tunguska,            title: "The morning the sky fell over Siberia"}
-  - {id: mary-celeste,        title: "The ship that sailed on without her crew"}
-  - {id: bloop,               title: "The loudest sound ever recorded underwater"}
-  - {id: wow-signal,          title: "Seventy-two seconds from somewhere else"}
-  - {id: nazca,               title: "Drawings meant to be seen from a place nobody could reach"}
-  - {id: pompeii-scrolls,     title: "The library that burned but did not disappear"}
-  - {id: somerton-man,        title: "The man on the beach with no name"}
-  - {id: green-children,      title: "The children who came out of the ground"}
-  - {id: baltic-anomaly,      title: "The shape on the floor of the Baltic Sea"}
-  - {id: kola-borehole,       title: "The deepest hole humans ever dug, and why we stopped"}
-  - {id: lost-cosmonauts,     title: "The signals that suggested someone got there first"}
-  - {id: hessdalen,           title: "The valley where the lights will not stop"}
-  - {id: eilean-mor,          title: "Three lighthouse keepers and an unfinished log"}
-  - {id: tarim-mummies,       title: "The wrong people in the wrong desert"}
-  - {id: derinkuyu,           title: "The city carved downward for twenty thousand people"}
+  - {id: night-shift-motel,   title: "The night clerk at a highway motel, and the guest in room 12"}
+  - {id: after-midnight-radio, title: "A radio station that keeps broadcasting after everyone goes home"}
+  - {id: one-rule,            title: "A house-sitting job with a very good rate and one rule"}
+  - {id: floor-that-isnt,     title: "A lift that stops at a floor the building does not have"}
+  - {id: last-train,          title: "The last train of the night never reaches the last station"}
+  - {id: neighbour-awake,     title: "The neighbour whose light never goes off"}
+  - {id: inside-the-walls,    title: "The sound inside the walls of a very old flat"}
+  - {id: unmapped-village,    title: "A village that appears on no map, and the road that leads there"}
+  - {id: tomorrow-camera,     title: "A camera that develops photographs of tomorrow"}
+  - {id: road-that-loops,     title: "A stretch of motorway that returns you to where you started"}
+  - {id: knocking-333,        title: "The knocking that comes at the same minute every night"}
+  - {id: stairs-in-woods,     title: "A staircase standing alone in the middle of a forest"}
+  - {id: voicemail,           title: "A voicemail from a number that was disconnected years ago"}
+  - {id: wrong-window,        title: "A window that looks onto a street that is not outside"}
+  - {id: night-rotation,      title: "The nurse assigned to the ward they stopped using"}
+  - {id: forest-returns,      title: "A forest that gives back what it takes, changed"}
+  - {id: guest-room-mirror,   title: "The mirror in the guest room, and why it stays covered"}
+  - {id: lighthouse-relief,   title: "The keeper sent to relieve a lighthouse that answered no radio"}
+  - {id: tunnel-crew,         title: "The maintenance crew who found the tunnel was longer than the map"}
+  - {id: empty-carpark,       title: "The attendant on the night shift of an empty multi-storey carpark"}

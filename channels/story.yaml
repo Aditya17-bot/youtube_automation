@@ -1,23 +1,33 @@
-# Narrated story channel: AI images with slow camera moves.
-# Global English audience, general-audience RPM, low copyright exposure.
-name: "The Long Quiet"
+# Horror channel: original atmospheric fiction, AI images with slow camera moves.
+#
+# Deliberately FICTION, and enforced as such (formats/story.py rejects
+# "based on a true story" and friends). Passing invented horror off as real is
+# deceptive and is exactly the fabricated-content pattern that costs channels
+# their monetisation.
+#
+# Dread comes from restraint, not gore: graphic content is both demonetised and
+# unnecessary for the format.
+name: "Nightfall Archive"
 format: story
 auto_publish: false
 privacy: private
-cta: "Subscribe to The Long Quiet for one story a week."
+cta: "Subscribe to Nightfall Archive for a new story every week."
 
 script:
-  target_words: [900, 1150]       # ~6-8 min at 138 wpm
+  mode: fiction
+  target_words: [900, 1150]       # ~6-8 min at 132 wpm
   duration_range: [360, 540]
   beats: [30, 42]
-  tone: "measured, curious, slightly cold; documentary narration, never breathless"
-  audience: "adults who like unsolved mysteries, deep history and quiet dread"
+  tone: >-
+    quiet, controlled dread; a narrator who is calm even when the story is not.
+    Slow build, concrete sensory detail, no jump-scare punctuation, no shouting
+  audience: "adults who like slow-burn horror, liminal spaces and unresolved endings"
 
 voice:
   provider: edge-tts
   name: en-US-BrianMultilingualNeural
-  rate: "-6%"
-  pitch: "-2Hz"
+  rate: "-10%"                    # slower than the finance read: dread needs air
+  pitch: "-4Hz"
 
 video:
   width: 1920
@@ -26,26 +36,39 @@ video:
   encoder: h264_nvenc
 
 style:
-  background: "#07090C"
-  surface:    "#11151A"
-  text:       "#E8E6E1"
-  muted:      "#8A8781"
-  accent:     "#C9A227"
-  accent_alt: "#7C9CB0"
-  grid:       "#1B2026"
-  # Appended to every image prompt so all shots look like one series.
+  background: "#050607"
+  surface:    "#0D0F11"
+  text:       "#DCD8D2"
+  muted:      "#7A756E"
+  accent:     "#8B1E1E"
+  accent_alt: "#4A5A63"
+  grid:       "#15181B"
   image_style: >-
-    cinematic still, muted desaturated palette, volumetric haze, soft rim light,
-    35mm film grain, shallow depth of field, moody, no text
+    cinematic horror still, near-monochrome desaturated palette, deep shadows,
+    heavy fog, single weak practical light source, cold blue-grey with faint
+    sodium glow, 35mm film grain, shallow depth of field, empty and still,
+    unsettling, no people visible, no text
 
 music:
   enabled: true
-  gain_db: -22
+  gain_db: -24                    # quieter bed: silence is part of the genre
   target_lufs: -14
 
 captions:
   enabled: true
   max_chars: 44
 
+affiliate:
+  associate_tag: ""               # set after Amazon Associates approval
+  marketplace: in
+  hub_url: ""
+  # Curated once, by hand, and appended to every description. Not model-written:
+  # a horror script has no business inventing product claims.
+  picks:
+    - {name: "Horror short story collections", why: "Where this kind of slow-burn dread comes from.", search_query: "horror short story collection paperback"}
+    - {name: "Warm reading light", why: "For reading these at night without lighting the whole room.", search_query: "clip on book reading light rechargeable"}
+    - {name: "Over-ear headphones", why: "Most of the atmosphere here is in the audio.", search_query: "over ear headphones wired"}
+    - {name: "Weighted blanket", why: "Unrelated to the horror. Genuinely helps you sleep after.", search_query: "weighted blanket single"}
+
 cadence:
-  per_week: 3
+  per_week: 2

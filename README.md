@@ -94,9 +94,16 @@ output is consistently good.
 
 | Channel | Format | Shape | Earns from |
 |---|---|---|---|
-| `finance` - Simple Money | charts + typography, no GPU | 16:9, 3-4 min | ads (highest RPM) |
-| `story` - The Long Quiet | AI images + camera moves | 16:9, 6-8 min | ads (watch time) |
+| `finance` - Simple Money | charts + typography, no GPU | 16:9, 3-4 min | ads + curated picks |
+| `story` - Nightfall Archive | horror fiction, AI images + camera moves | 16:9, 6-8 min | ads + curated picks |
 | `product` - Under Budget | AI stills + big text | 9:16, 40-55 s | Amazon affiliate |
+
+The horror channel is **explicitly fiction**, and enforced as such: passing
+invented horror off as a real account is deceptive and is the fabricated-content
+pattern that costs channels their monetisation. `formats/story.py` rejects "based
+on a true story" and its variants when `script.mode: fiction`, and the prompt
+rules ban gore, sexual content, self-harm method and children as victims - dread
+comes from restraint, and graphic content is demonetised anyway.
 
 ## Adding a channel
 
@@ -112,6 +119,23 @@ render_beat(beat, duration, out_path, theme[, index]) -> Path
 
 The rest of the pipeline is shared and needs no changes.
 
+## Disk
+
+Renders are large: an 8-minute 1080p story video is ~440 MB at YouTube's
+recommended 8 Mbps. Work directories hold per-beat clips, frame dumps and
+padded audio on top of that.
+
+```bash
+python -m core.review disk                    # what is being used
+python -m core.review approve <slug> --channel story   # purges the work dir
+python -m core.review purge --work --published --images
+```
+
+Approving purges the job's work directory; publishing additionally drops the
+local mp4, since YouTube then holds the copy that matters. Metadata and status
+always survive, because topic history reads them. Pass `--keep` (approve) or
+`--keep-local` (publish) to opt out.
+
 ## Affiliate honesty
 
 Amazon's Product Advertising API is only granted after Associates approval, so
@@ -121,9 +145,14 @@ an Amazon search; a claim linter rejects invented prices, ratings, review
 counts, unsupported superlatives, and "I tested this" claims. Once PA-API access
 exists, add an `asin` per item and the same code emits direct product links.
 
-Set `affiliate.associate_tag` in `channels/product.yaml` after approval - every
-link is rewritten from that one value. Apply only once the channel and hub have
-real traffic: approval starts a 180-day, three-qualifying-sales clock.
+Set `affiliate.associate_tag` in the channel YAML after approval - every link is
+rewritten from that one value. Apply only once the channel and hub have real
+traffic: approval starts a 180-day, three-qualifying-sales clock.
+
+The finance and horror channels carry a hand-written `affiliate.picks` list in
+their config instead of per-video items, appended to every description. That is
+deliberate: neither a finance explainer nor a horror story should have a model
+inventing product claims inside it.
 
 ## Requirements
 
