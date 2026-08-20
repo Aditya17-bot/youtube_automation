@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 
 from core import imagegen
 from core.config import ffmpeg_bin, pick_encoder
+from core.script import check_duration
 
 REVEAL_FPS = 15
 
@@ -169,6 +170,7 @@ def validate_script(data: object, channel: dict) -> None:
     w_lo, w_hi = channel["script"]["target_words"]
     if not w_lo - 25 <= words <= w_hi + 35:
         raise ValueError(f"script is {words} words; need {w_lo}-{w_hi}")
+    check_duration(words, len(beats), channel)
 
     found = [(m.group(0), why) for rx, why in _COMPILED for m in rx.finditer(spoken)]
     if found:

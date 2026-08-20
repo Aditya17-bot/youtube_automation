@@ -15,8 +15,10 @@ cta: "Subscribe to Nightfall Archive for a new story every week."
 
 script:
   mode: fiction
-  target_words: [560, 700]        # ~4-5 min at this read speed
-  duration_range: [230, 320]
+  # 590 words over 28 beats measures 4.6 min. The old [560, 700] with a 320 s
+  # ceiling allowed 5.2, which is past the 5 min this channel is meant to hold.
+  target_words: [480, 590]
+  duration_range: [230, 300]      # hard ceiling; core.assemble enforces it
   beats: [20, 28]
   tone: >-
     quiet, controlled dread; a narrator who is calm even when the story is not.
@@ -28,6 +30,9 @@ voice:
   name: en-US-BrianMultilingualNeural
   rate: "-10%"                    # slower than the finance read: dread needs air
   pitch: "-4Hz"
+  # Measured, not assumed - see core.script.words_per_minute. Re-derive with
+  # `python -m core.voice --measure --channel story` if the voice or rate moves.
+  words_per_minute: 134
 
 video:
   width: 1920

@@ -32,6 +32,13 @@ class Paths:
 
 PATHS = Paths()
 
+# Silence padded around narration. Here rather than in assemble.py because the
+# script stage has to predict the finished runtime before anything is rendered,
+# and a duration estimate that disagrees with the renderer is worse than none.
+TAIL_PAD = 0.45     # after every beat, so a cut never clips the last word
+HEAD_PAD = 0.35     # before the first word
+OUTRO_PAD = 1.2     # after the last
+
 
 class ConfigError(RuntimeError):
     pass

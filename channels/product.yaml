@@ -16,8 +16,8 @@ affiliate:
   hub_url: ""                     # e.g. "https://<user>.github.io/under-budget"
 
 script:
-  target_words: [95, 140]         # ~40-55s at Shorts pace
-  duration_range: [35, 58]
+  target_words: [95, 120]         # 120 words over 7 beats measures 50 s
+  duration_range: [35, 52]        # under 60 s or YouTube stops calling it a Short
   items: [3, 5]
   tone: "quick, plain, useful; no hype, no hard sell"
   audience: "Indian shoppers browsing on a phone, deciding in seconds"
@@ -27,6 +27,7 @@ voice:
   name: en-US-BrianMultilingualNeural
   rate: "+6%"                     # Shorts run faster than longform
   pitch: "+0Hz"
+  words_per_minute: 158           # measured; see core.script.words_per_minute
 
 video:
   width: 1080

@@ -19,11 +19,7 @@ from core.config import PATHS, ffmpeg_bin, ffprobe_bin, load_channel, pick_encod
 from core.script import iter_beats, load_format
 from core.theme import Theme
 
-# Breathing room after each beat's narration, so cuts do not clip the last word.
-TAIL_PAD = 0.45
-# Lead-in before the first word, and a beat of silence at the end.
-HEAD_PAD = 0.35
-OUTRO_PAD = 1.2
+from core.config import HEAD_PAD, OUTRO_PAD, TAIL_PAD  # noqa: F401  (re-exported)
 
 
 @dataclass
@@ -147,14 +143,30 @@ def build(script_path: Path, channel_name: str = "finance", *, keep_work: bool =
             all_words.append(tts.Word(w.text, cursor + lead + w.start, cursor + lead + w.end))
 
         clip = clip_dir / f"beat_{i:02d}.mp4"
-        _render(fmt, beat, duration, clip, theme, i)
-
         timings.append(BeatTiming(i, cursor, duration, padded, clip))
         cursor += duration
         print(f"  beat {i:02d} [{beat_label(beat):<14}] {duration:5.2f}s")
 
     total = cursor
     print(f"  total: {total / 60:.2f} min")
+
+    # Checked here, between narration and images, because this is the first
+    # point the real runtime is known and the last point before it gets
+    # expensive. The script stage only ever had an estimate; edge-tts is the
+    # authority. Failing costs a minute of speech synthesis, where failing
+    # after the render would cost the GPU pass on every beat.
+    limit = (channel.get("script") or {}).get("duration_range")
+    if limit and total > float(limit[1]):
+        raise ValueError(
+            f"narration runs {total / 60:.2f} min, over the "
+            f"{float(limit[1]) / 60:.2f} min ceiling for {channel_name}. "
+            "Lower script.target_words, or raise script.duration_range if the "
+            "longer video is actually wanted."
+        )
+
+    # --- 1b. now the expensive half ----------------------------------------
+    for t, beat in zip(timings, beats):
+        _render(fmt, beat, t.duration, t.clip, theme, t.index)
 
     # Persisted so packaging can build chapter markers without re-synthesising.
     (job / "timings.json").write_text(

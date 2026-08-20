@@ -16,6 +16,7 @@ from pathlib import Path
 
 from core import imagegen
 from core.config import ffmpeg_bin, pick_encoder
+from core.script import check_duration
 
 # Cycled so consecutive shots never repeat a move.
 MOVES = ["zoom_in", "pan_right", "zoom_out", "pan_left", "zoom_in", "pan_down"]
@@ -165,6 +166,7 @@ def validate_script(data: object, channel: dict) -> None:
     words = len(re.findall(r"\b[\w']+\b", spoken))
     if not w_lo - 120 <= words <= w_hi + 160:
         raise ValueError(f"script is {words} words; need {w_lo}-{w_hi}")
+    check_duration(words, len(beats), channel)
 
     # Enforced rather than merely requested: a model told "this is fiction"
     # will still reach for "based on true events" because it reads as a stronger

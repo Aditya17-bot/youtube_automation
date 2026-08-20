@@ -8,7 +8,7 @@ privacy: private
 cta: "Subscribe to Simple Money for simple money explainers every week."
 
 script:
-  target_words: [400, 500]
+  target_words: [380, 470]
   duration_range: [180, 240]      # 3-4 minutes
   tone: "calm, smart, plain-spoken; short sentences; natural pauses; no jargon"
   audience: "Indian beginners who earn a salary and want money to make sense"
@@ -20,7 +20,8 @@ script:
 voice:
   provider: edge-tts
   name: en-US-AvaMultilingualNeural    # swap to en-IN-PrabhatNeural for an Indian accent
-  rate: "-8%"                     # ~138 wpm: calm, steady
+  rate: "-8%"                     # calm, steady
+  words_per_minute: 139           # measured; see core.script.words_per_minute
   pitch: "+0Hz"
 
 video:

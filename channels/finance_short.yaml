@@ -17,8 +17,8 @@ cta: "Full explainer on the channel."
 
 script:
   topics_from: finance           # same subjects as the long-form videos
-  target_words: [95, 135]        # ~40-55s at Shorts pace
-  duration_range: [35, 55]
+  target_words: [95, 125]        # 125 words over 9 beats measures 51 s
+  duration_range: [35, 52]       # under 60 s or YouTube stops calling it a Short
   beats: [6, 9]
   tone: "quick, plain, one idea only; no preamble, no sign-off"
   audience: "Indian beginners scrolling on a phone"
@@ -32,6 +32,7 @@ voice:
   name: en-US-AvaMultilingualNeural
   rate: "+8%"
   pitch: "+0Hz"
+  words_per_minute: 164   # measured against the finished Short
 
 video:
   width: 1080

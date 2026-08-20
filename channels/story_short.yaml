@@ -14,8 +14,8 @@ cta: "Full story on the channel."
 script:
   mode: fiction
   topics_from: story
-  target_words: [105, 150]       # ~45-60s at this read speed
-  duration_range: [40, 58]
+  target_words: [80, 110]        # 110 words over 12 beats measures 53 s
+  duration_range: [40, 55]       # under 60 s or YouTube stops calling it a Short
   beats: [8, 12]
   tone: >-
     one scene, one turn, no resolution. Present tense where it helps. End on the
@@ -27,6 +27,7 @@ voice:
   name: en-US-BrianMultilingualNeural
   rate: "-4%"
   pitch: "-4Hz"
+  words_per_minute: 143   # measured; see core.script.words_per_minute
 
 video:
   width: 1080

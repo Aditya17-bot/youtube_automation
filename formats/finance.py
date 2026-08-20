@@ -23,6 +23,7 @@ from matplotlib import font_manager
 
 from core import fincalc as fc
 from core.config import ffmpeg_bin
+from core.script import check_duration
 from core.theme import Theme, pick_font
 
 # Draw-on lasts this long; the rest of the beat holds the finished frame.
@@ -682,6 +683,7 @@ def validate_script(data: object, channel: dict) -> None:
     words = len(re.findall(r"\b[\w']+\b", spoken))
     if not w_lo - 40 <= words <= w_hi + 60:
         raise ValueError(f"script is {words} words; need {w_lo}-{w_hi}")
+    check_duration(words, len(beats), channel)
 
     # Compliance is part of validation so a bad script is retried, not rendered.
     compliance.lint_script(spoken).raise_if_bad()

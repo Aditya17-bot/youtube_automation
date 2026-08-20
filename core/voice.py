@@ -164,11 +164,54 @@ if __name__ == "__main__":
     ap.add_argument("--voice", default="en-US-AndrewNeural")
     ap.add_argument("--out", default="out/work/voice_test.mp3")
     ap.add_argument("--list", action="store_true", help="list voices and exit")
+    ap.add_argument("--measure", action="store_true",
+                    help="re-derive words_per_minute for every channel")
     args = ap.parse_args()
 
     if args.list:
         for v in list_voices():
             print(v)
+        raise SystemExit(0)
+
+    if args.measure:
+        import re
+        import tempfile
+
+        from core.config import load_channel
+        from core.schedule import all_channels
+
+        # A paragraph, not beats: it isolates the voice from how a given script
+        # happens to be chopped up. BEAT_FACTOR then converts to the rate real
+        # scripts deliver at, since a beat almost always ends on a full stop and
+        # the pause for one is not in the prose figure.
+        SAMPLE = (
+            "The night clerk at the highway motel kept a ledger under the desk. "
+            "He wrote down every guest who arrived after two in the morning, and "
+            "the number in the second column was never the same twice. Room twelve "
+            "had been empty since the spring, and the key still hung on its hook, "
+            "and every morning it was warm. He did not mention this to anyone. "
+            "The manager visited on Thursdays and asked no questions worth answering."
+        )
+        # Calibrated against a finished Short: 128 words of real beat-split
+        # script took 46.85 s of narration, against 205.7 wpm on the paragraph.
+        BEAT_FACTOR = 0.797
+
+        n = len(re.findall(r"\b[\w']+\b", SAMPLE))
+        tmp = Path(tempfile.mkdtemp())
+        print(f"{'channel':16} {'rate':>5}  {'prose':>7}  {'effective':>9}  config")
+        for name in all_channels():
+            try:
+                voice_cfg = load_channel(name)["voice"]
+            except Exception:  # noqa: BLE001
+                continue
+            res = synthesize(SAMPLE, tmp / f"{name}.mp3", voice=voice_cfg["name"],
+                             rate=voice_cfg.get("rate", "+0%"),
+                             pitch=voice_cfg.get("pitch", "+0Hz"))
+            prose = n / res.duration * 60
+            stated = voice_cfg.get("words_per_minute")
+            drift = "" if stated is None else f"  (config says {stated})"
+            print(f"{name:16} {voice_cfg.get('rate', '+0%'):>5}  "
+                  f"{prose:7.1f}  {prose * BEAT_FACTOR:9.0f}{drift}")
         raise SystemExit(0)
 
     res = synthesize(args.text, Path(args.out), voice=args.voice)
