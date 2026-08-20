@@ -198,6 +198,41 @@ Each run appends to `state/logs/daily-YYYY-MM-DD.log`. Task Scheduler discards
 stdout, so that file is the only record of a run that failed overnight. One
 channel failing does not stop the others.
 
+### Email when something breaks
+
+Every failure this pipeline has is silent. A render dies and the channel just
+has no video that day; a refresh token is revoked and uploads stop; a topic bank
+runs dry and the channel goes quiet. None of it surfaces until you notice, which
+takes about a week.
+
+`secrets/smtp.json` already exists with your address filled in. It needs one
+value — a Google **app password**, not your account password, which Gmail's SMTP
+refuses outright:
+
+1. 2-Step Verification must be on: [myaccount.google.com/security](https://myaccount.google.com/security).
+2. [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+   → name it anything → copy the 16 characters.
+3. Paste it over `PASTE_APP_PASSWORD_HERE`. Spaces are fine, they get stripped.
+
+```bash
+.venv/Scripts/python.exe -m core.notify --test    # confirm it arrives
+.venv/Scripts/python.exe -m core.notify           # config status + bank levels
+```
+
+> That file holds a working credential for your Google account in plain text.
+> `secrets/` is gitignored, so it will not be committed, but anything with read
+> access to the machine can use it. Revoke it from the same app-passwords page
+> if that ever matters — it grants mail access only, not account access.
+
+Mail goes out only when something is wrong, so silence means the run was clean.
+It reports render failures, upload failures, a channel that was never
+authorised, a crash before the run could report anything itself, and a topic
+bank with under two weeks left — that last one arrives *before* the channel
+stops, which is the only useful time to hear about it.
+
+With no config file the whole thing is a no-op that prints what it would have
+sent. Nothing in it can fail a run.
+
 **Do not schedule volume before quality.** YouTube's inauthentic-content policy
 is enforced at the channel level and carries a three-strike path to permanent
 removal from the Partner Program. Two good videos a week beats seven weak ones,

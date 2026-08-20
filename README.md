@@ -43,6 +43,7 @@ and `metadata.json`. Nothing is uploaded without an explicit approve.
 | `core/review.py` | The human gate |
 | `core/schedule.py` | Turns `cadence.per_week` into which channels run today |
 | `core/retention.py` | Deletes what nothing reads; never a pending video |
+| `core/notify.py` | Emails when an unattended run needs a human |
 | `core/imagegen.py` | Local Stable Diffusion, tuned for 4 GB VRAM |
 | `core/affiliate.py` | Amazon links + the static hub site |
 | `formats/finance.py` | Minimalist chart/typography renderer |

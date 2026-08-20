@@ -24,7 +24,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pipeline
-from core import ideate, publish, retention, review, schedule
+from core import ideate, notify, publish, retention, review, schedule
 from core.config import PATHS
 
 
@@ -96,7 +96,7 @@ def build_plan(day: date, only: list[str] | None, force: bool) -> list[tuple[str
     return pairs
 
 
-def main() -> int:
+def _parse() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="daily unattended run")
     ap.add_argument("--dry-run", action="store_true", help="print the plan and stop")
     ap.add_argument("--force", action="store_true", help="ignore cadence")
@@ -107,13 +107,12 @@ def main() -> int:
     ap.add_argument("--date", help="pretend it is this date (YYYY-MM-DD)")
     ap.add_argument("--retain-days", type=int, default=retention.DEFAULT_DAYS,
                     help="keep rendered media and cached images this many days")
-    args = ap.parse_args()
+    return ap.parse_args()
 
-    day = date.fromisoformat(args.date) if args.date else date.today()
 
-    if not args.dry_run:
-        sys.stdout = Tee(_log_path(day))
-
+def run(args: argparse.Namespace, day: date) -> tuple[int, list[str]]:
+    """One day's work. Returns its exit code and anything worth an email."""
+    problems: list[str] = []
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     print(f"\n=== daily {day:%a %d %b %Y} (started {stamp}) ===")
 
@@ -128,18 +127,29 @@ def main() -> int:
         if recovered:
             print(f"history: recovered {len(recovered)} topic(s) for {channel}")
 
+    # Checked before the plan, because a bank that has just run dry produces
+    # no pair at all - the channel goes quiet and there is nothing in the plan
+    # left to notice it by.
+    for warning in notify.low_banks():
+        print(f"topics: {warning}")
+        problems.append(warning)
+
     pairs = build_plan(day, args.channels, args.force)
     if not pairs:
         print("nothing scheduled today")
-        return 0
+        return 0, problems
 
     for channel, topic in pairs:
-        note = "" if publish.has_credentials(channel) else "   [no credentials: render only]"
+        if publish.has_credentials(channel):
+            note = ""
+        else:
+            note = "   [no credentials: render only]"
+            problems.append(f"{channel}: not authorised, video will not upload")
         print(f"plan: {channel:16} {topic}{note}")
 
     if args.dry_run:
         print("\ndry run, nothing rendered")
-        return 0
+        return 0, problems
 
     rendered, failed = [], []
     for channel, topic in pairs:
@@ -147,13 +157,15 @@ def main() -> int:
         try:
             pipeline.run(channel, topic)
             rendered.append(channel)
-        except Exception:  # noqa: BLE001 - keep the other channels alive
+        except Exception as exc:  # noqa: BLE001 - keep the other channels alive
             failed.append(channel)
+            problems.append(f"{channel}/{topic}: render failed: "
+                            f"{type(exc).__name__}: {exc}")
             traceback.print_exc(file=sys.stdout)
 
     if args.no_publish:
         print("\n--publish skipped")
-        return 1 if failed else 0
+        return (1 if failed else 0), problems
 
     # Every channel with credentials, not only today's: a video approved
     # yesterday whose upload died on a network blip should go out now.
@@ -165,8 +177,10 @@ def main() -> int:
         try:
             uploaded += len(publish.publish_approved(
                 channel, limit=10, privacy=args.privacy))
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             failed.append(f"{channel} (upload)")
+            problems.append(f"{channel}: upload failed: "
+                            f"{type(exc).__name__}: {exc}")
             traceback.print_exc(file=sys.stdout)
 
     # Last, so a sweep never removes something this run still needed. Failing
@@ -183,7 +197,29 @@ def main() -> int:
     print(f"\nrendered {len(rendered)}, uploaded {uploaded}, failed {len(failed)}")
     if failed:
         print("failed: " + ", ".join(failed))
-    return 1 if failed else 0
+    return (1 if failed else 0), problems
+
+
+def main() -> int:
+    args = _parse()
+    day = date.fromisoformat(args.date) if args.date else date.today()
+    log = _log_path(day)
+
+    if not args.dry_run:
+        sys.stdout = Tee(log)
+
+    # An error out here - a bad import, a full disk, a config that will not
+    # parse - is the one failure with no other way of reaching anybody, since
+    # it happens before the run is in a position to report anything itself.
+    try:
+        code, problems = run(args, day)
+    except Exception:  # noqa: BLE001
+        traceback.print_exc(file=sys.stdout)
+        code, problems = 1, ["the run stopped with an unhandled error"]
+
+    if not args.dry_run:
+        notify.report(f"{day:%Y-%m-%d}", problems, log)
+    return code
 
 
 if __name__ == "__main__":

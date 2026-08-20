@@ -21,3 +21,43 @@ topics:
   - {id: lighthouse-relief,   title: "The keeper sent to relieve a lighthouse that answered no radio"}
   - {id: tunnel-crew,         title: "The maintenance crew who found the tunnel was longer than the map"}
   - {id: empty-carpark,       title: "The attendant on the night shift of an empty multi-storey carpark"}
+  - {id: long-haul-driver,    title: "A lorry driver on a night route, and the hitchhiker always further ahead"}
+  - {id: toll-booth,          title: "The toll booth where more cars leave the road than joined it"}
+  - {id: archive-basement,    title: "A records clerk cataloguing files dated years from now"}
+  - {id: sleep-study,         title: "A sleep clinic volunteer, and which side of the glass is being observed"}
+  - {id: weather-station,     title: "A remote weather station logging an instrument nobody installed"}
+  - {id: nightline,           title: "An overnight helpline, and the caller who opens the same way each time"}
+  - {id: dead-letter,         title: "A dead letter sorter finds envelopes addressed to the sorting office"}
+  - {id: cctv-delay,          title: "The night guard whose monitors run five seconds behind the corridor"}
+  - {id: locksmith-callout,   title: "A locksmith called out to a house where every door already stands open"}
+  - {id: census-round,        title: "An enumerator in a settlement that counts one more person per household"}
+  - {id: midnight-pool,       title: "The lifeguard at a pool that closes at eleven and has swimmers at one"}
+  - {id: ferry-count,         title: "A night ferry whose passenger count rises between one shore and the other"}
+  - {id: cave-survey,         title: "A survey team measuring a passage that is longer on the way back"}
+  - {id: dictation-tapes,     title: "A typist transcribing tapes that begin describing the room she is in"}
+  - {id: quarry-siren,        title: "A quarry town where the blast siren sounds on a day with no work"}
+  - {id: last-bus-depot,      title: "The last bus returns to the depot lit, on time, and empty at the wheel"}
+  - {id: river-dredger,       title: "A dredging crew that keeps raising the same object, pass after pass"}
+  - {id: repeat-viewing,      title: "An estate agent whose empty house is viewed weekly by the same couple"}
+  - {id: night-print-run,     title: "A print run that produces one page that was not in the file"}
+  - {id: on-call-logs,        title: "An engineer reading server logs of actions nobody performed"}
+  - {id: closed-funfair,      title: "The caretaker of a shut funfair, and the ride that runs after midnight"}
+  - {id: tailors-tape,        title: "A tailor whose measuring tape disagrees with itself, always by more"}
+  - {id: lost-property,       title: "A lost property office where things arrive before they are lost"}
+  - {id: empty-nets,          title: "A fishing crew whose nets come up dry every cast but one"}
+  - {id: bell-count,          title: "A church bell ringing a number nobody set it to ring"}
+  - {id: one-extra-desk,      title: "An exam hall with one more candidate than the register lists"}
+  - {id: signal-box,          title: "A signalman accepting a train that appears on no timetable"}
+  - {id: probate-inventory,   title: "A probate clerk whose room count exceeds the floor plan"}
+  - {id: last-fare,           title: "A night taxi driver whose final fare always names the same address"}
+  - {id: hotel-laundry,       title: "A hotel laundry where sheets come back folded before they are washed"}
+  - {id: outage-in-order,     title: "A street where the power cut moves house to house, in order"}
+  - {id: the-line-dogs-wont,  title: "A village where every dog stops at the same invisible line"}
+  - {id: one-more-figure,     title: "A family photograph that gains a figure with each reprint"}
+  - {id: last-light-on,       title: "A school caretaker locking up, and the classroom that is always last"}
+  - {id: core-samples,        title: "A drilling team whose ice cores are layered a little too regularly"}
+  - {id: numbers-station,     title: "A shortwave numbers station that begins reading out the listener's address"}
+  - {id: clock-repair,        title: "A clock that keeps perfect time only while the room is empty"}
+  - {id: night-stock-count,   title: "A warehouse inventory that comes out higher every single time"}
+  - {id: surveyors-pegs,      title: "A surveyor whose boundary markers move overnight, always inward"}
+  - {id: hedge-maze,          title: "A garden maze that measures differently every morning"}

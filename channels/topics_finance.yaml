@@ -26,3 +26,43 @@ topics:
   - {id: real-returns,          title: "Nominal vs real returns: the number that matters", visual: line_chart}
   - {id: cost-of-waiting,       title: "The cost of waiting one year to start", visual: stat}
   - {id: small-leaks,           title: "How small daily spends add up over a decade", visual: stat}
+  - {id: xirr-vs-cagr,          title: "CAGR vs XIRR: which number tells you the truth", visual: line_chart}
+  - {id: sequence-of-returns,   title: "Why the order of good and bad years changes the ending", visual: line_chart}
+  - {id: average-misleads,      title: "Why an average return is not the return you get", visual: split_compare}
+  - {id: past-performance,      title: "Why past performance is a description, not a forecast", visual: text_card}
+  - {id: survivorship-bias,     title: "Survivorship bias: the funds that are missing from the chart", visual: list_reveal}
+  - {id: risk-vs-volatility,    title: "Risk and volatility are not the same thing", visual: split_compare}
+  - {id: asset-allocation,      title: "Why the mix matters more than the pick", visual: bar_chart}
+  - {id: rebalancing,           title: "What rebalancing mechanically does to a portfolio", visual: split_compare}
+  - {id: diversify-limits,      title: "The point where adding another fund stops helping", visual: line_chart}
+  - {id: sip-vs-lumpsum,        title: "SIP or lump sum: what actually differs", visual: split_compare}
+  - {id: step-up-sip,           title: "What raising your SIP by 10% a year does over 20 years", visual: line_chart}
+  - {id: goal-in-future-rupees, title: "Planning a goal in future rupees, not today's", visual: stat}
+  - {id: retirement-corpus,     title: "How a retirement corpus is sized, arithmetically", visual: stat}
+  - {id: bond-price-yield,      title: "Why bond prices fall when interest rates rise", visual: line_chart}
+  - {id: duration-basics,       title: "Duration: how much a rate change moves a bond", visual: bar_chart}
+  - {id: debt-fund-types,       title: "How debt funds are categorised, and by what", visual: list_reveal}
+  - {id: liquid-vs-savings,     title: "Where short-term money is supposed to sit", visual: split_compare}
+  - {id: fd-taxation,           title: "How fixed deposit interest is actually taxed", visual: bar_chart}
+  - {id: rd-vs-sip,             title: "Recurring deposit vs SIP: two different machines", visual: split_compare}
+  - {id: gold-forms,            title: "The forms gold ownership takes, and what each costs", visual: list_reveal}
+  - {id: reit-structure,        title: "What a REIT is, structurally", visual: list_reveal}
+  - {id: credit-card-interest,  title: "How credit card interest is really calculated", visual: line_chart}
+  - {id: minimum-due,           title: "What paying only the minimum due does", visual: line_chart}
+  - {id: no-cost-emi,           title: "What 'no cost EMI' actually costs", visual: split_compare}
+  - {id: prepay-vs-invest,      title: "Prepaying a home loan vs investing the same money", visual: split_compare}
+  - {id: loan-tenure,           title: "How loan tenure changes the total interest paid", visual: bar_chart}
+  - {id: floating-vs-fixed,     title: "Floating and fixed rates: what you are choosing between", visual: split_compare}
+  - {id: credit-utilisation,    title: "Credit utilisation, and why 30% keeps coming up", visual: stat}
+  - {id: cibil-errors,          title: "How to read a credit report and dispute an error", visual: list_reveal}
+  - {id: tax-regimes,           title: "Old and new tax regimes, side by side", visual: split_compare}
+  - {id: tds-advance-tax,       title: "TDS and advance tax: who pays what, when", visual: list_reveal}
+  - {id: read-form-16,          title: "How to read Form 16 without guessing", visual: list_reveal}
+  - {id: holding-periods,       title: "Short term and long term: where the line sits", visual: split_compare}
+  - {id: indexation,            title: "What indexation does to a long-term gain", visual: bar_chart}
+  - {id: growth-vs-idcw,        title: "Growth and IDCW options: the same money, moved differently", visual: split_compare}
+  - {id: cost-of-a-trade,       title: "Every charge stacked into one transaction", visual: bar_chart}
+  - {id: exit-load,             title: "Exit load: the fee for leaving early", visual: stat}
+  - {id: nominee-vs-will,       title: "A nominee is not an heir: what each one does", visual: split_compare}
+  - {id: guaranteed-returns,    title: "Why 'guaranteed high returns' is the whole warning", visual: text_card}
+  - {id: ponzi-mechanics,       title: "How a Ponzi scheme pays its early investors", visual: line_chart}
