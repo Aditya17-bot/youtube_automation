@@ -207,18 +207,49 @@ and private-by-default exists precisely so this decision stays yours.
 
 ## 5. Disk
 
-An 8-minute 1080p render is ~440 MB at YouTube's recommended bitrate; at 4-5
-minutes it is ~250 MB. Work directories add per-beat clips and frame dumps on
-top.
+Handled automatically. Every `daily.py` run ends with a sweep, so nothing needs
+doing by hand.
 
 ```bash
-.venv/Scripts/python.exe -m core.review disk
-.venv/Scripts/python.exe -m core.review purge --work --published --images
+.venv/Scripts/python.exe -m core.review disk        # what is being used
+.venv/Scripts/python.exe -m core.retention --dry-run # what the sweep would drop
+.venv/Scripts/python.exe -m core.retention           # drop it now
 ```
 
-Approving drops the work directory. Publishing additionally drops the local mp4,
-since YouTube then holds the copy that matters. Metadata, status and script
-always survive, because topic history reads them.
+Three things already delete themselves at the right moment: the work directory
+when a job is approved, and `final.mp4` when the upload succeeds — YouTube then
+holds the copy that matters. The sweep is for everything those two miss.
+
+| what | when it goes |
+|---|---|
+| `final.mp4` of a published video | at upload; the sweep retries if that failed |
+| `thumbnail.png` of a published video | after 3 days (YouTube has its own copy) |
+| `assets/generated` images | after 3 days |
+| work directory of a crashed render | after 3 days of no writes |
+| `state/logs/daily-*.log` | after 30 days |
+| **anything `pending` or `approved`** | **never** |
+| **metadata, status and script json** | **never** |
+
+Change the window with `--retain-days 7` on either command.
+
+The images are the reason this exists. `assets/generated` is keyed on a hash of
+the prompt text, and prompts come from per-beat script lines, so two videos
+essentially never share one — it looks like a cache but behaves like a scratch
+directory. It measured ~25 MB per video, which is ~19 GB a year at the current
+cadence, all of it dead the moment the render finishes. With the sweep in place
+the whole project sits at roughly 250 MB and stays there.
+
+Nothing `pending` is ever touched, at any age. An undecided video is work a
+human has not looked at yet, and no disk figure justifies deleting it — if a
+parked channel is holding space, reject it explicitly:
+
+```bash
+.venv/Scripts/python.exe -m core.review reject desk-tidy --channel product --note "parked"
+```
+
+Videos are **not** kept as local backups. Re-uploading is not what the local
+copy is for and it was never a reliable archive; `script.json` survives forever,
+which is what a re-render actually needs.
 
 ---
 

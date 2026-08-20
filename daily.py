@@ -24,7 +24,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pipeline
-from core import ideate, publish, review, schedule
+from core import ideate, publish, retention, review, schedule
 from core.config import PATHS
 
 
@@ -105,6 +105,8 @@ def main() -> int:
                     choices=["private", "unlisted", "public"])
     ap.add_argument("--no-publish", action="store_true", help="render only")
     ap.add_argument("--date", help="pretend it is this date (YYYY-MM-DD)")
+    ap.add_argument("--retain-days", type=int, default=retention.DEFAULT_DAYS,
+                    help="keep rendered media and cached images this many days")
     args = ap.parse_args()
 
     day = date.fromisoformat(args.date) if args.date else date.today()
@@ -166,6 +168,17 @@ def main() -> int:
         except Exception:  # noqa: BLE001
             failed.append(f"{channel} (upload)")
             traceback.print_exc(file=sys.stdout)
+
+    # Last, so a sweep never removes something this run still needed. Failing
+    # to reclaim disk must not fail the run: the videos are already on YouTube.
+    try:
+        swept = retention.sweep(args.retain_days)
+        for line in swept["_lines"]:
+            print(line)
+        if swept["total"]:
+            print(f"reclaimed {review.human(swept['total'])}")
+    except Exception:  # noqa: BLE001
+        traceback.print_exc(file=sys.stdout)
 
     print(f"\nrendered {len(rendered)}, uploaded {uploaded}, failed {len(failed)}")
     if failed:
