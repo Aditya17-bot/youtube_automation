@@ -9,7 +9,7 @@
 # unnecessary for the format.
 name: "Nightfall Archive"
 format: story
-auto_publish: false
+auto_publish: true
 privacy: private
 cta: "Subscribe to Nightfall Archive for a new story every week."
 

@@ -142,26 +142,66 @@ config). Check the video in YouTube Studio, then flip it public there, or run
 
 ## 4. Scheduling it
 
-Once a format's output is consistently good, set `auto_publish: true` in that
-channel's config and let Windows Task Scheduler drive it.
+Already wired up. `daily.py` renders whatever today's cadence calls for and
+uploads it **private**; `daily.cmd` is the Task Scheduler wrapper.
 
-Create `daily.cmd`:
-
-```bat
-cd /d C:\adi\youtube_auto
-.venv\Scripts\python.exe pipeline.py --channel finance
-.venv\Scripts\python.exe pipeline.py --channel finance_short
-.venv\Scripts\python.exe -m core.publish run --channel finance
+```bash
+python daily.py --dry-run     # what today would do
+python -m core.schedule       # the cadence table and the next two weeks
+python daily.py --force       # every channel now, ignoring cadence
 ```
 
-Then: Task Scheduler → Create Task → daily trigger → run `daily.cmd`, with
-"Run whether user is logged on or not" unticked (image generation needs the GPU
-session).
+What runs when comes from `cadence.per_week` in each channel config, spread
+evenly across the week rather than bunched:
+
+| channel | per week | days |
+|---|---|---|
+| finance | 3 | Mon, Wed, Sat |
+| finance_short | 5 | Mon, Tue, Thu, Fri, Sun |
+| story | 2 | Mon, Fri |
+| story_short | 5 | Mon, Tue, Thu, Fri, Sun |
+| product | - | never (uses `per_day` and has no OAuth client) |
+
+Change a number, and the schedule changes. Nothing else needs editing.
+
+When a Short runs the same day as its long-form parent, it reuses the parent's
+topic, so the Short is a teaser for that video rather than an advert for a
+different one.
+
+### The review gate moved, it did not go away
+
+`auto_publish: true` on the four live channels means a finished video lands
+`approved` instead of `pending`, so the run uploads it without waiting. It goes
+up **private**. You still decide what the world sees - you now decide it in
+YouTube Studio instead of `out/review`.
+
+`daily.py` forces `--privacy private` whatever the channel config says.
+Overriding that is the one flag that lets this pipeline publish something no
+human has watched.
+
+### The scheduled task
+
+```powershell
+schtasks /query /tn "youtube_auto daily" /fo LIST     # check it
+schtasks /change /tn "youtube_auto daily" /st 07:30   # move the time
+schtasks /run   /tn "youtube_auto daily"              # run it now
+schtasks /delete /tn "youtube_auto daily" /f          # stop it entirely
+```
+
+Registered "Interactive only" on purpose: image generation needs the logged-in
+GPU session and renders black frames without it. So the machine has to be on
+and logged in at the scheduled time. `StartWhenAvailable` is set, so a run
+missed because the machine was off happens at the next opportunity instead of
+being skipped.
+
+Each run appends to `state/logs/daily-YYYY-MM-DD.log`. Task Scheduler discards
+stdout, so that file is the only record of a run that failed overnight. One
+channel failing does not stop the others.
 
 **Do not schedule volume before quality.** YouTube's inauthentic-content policy
 is enforced at the channel level and carries a three-strike path to permanent
 removal from the Partner Program. Two good videos a week beats seven weak ones,
-and the review gate exists precisely so this decision stays yours.
+and private-by-default exists precisely so this decision stays yours.
 
 ---
 

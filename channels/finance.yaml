@@ -3,7 +3,7 @@
 # interest, SIP mechanics, budgeting, fees. No tickers, no calls, no targets.
 name: "Simple Money"
 format: finance
-auto_publish: false
+auto_publish: true
 privacy: private
 cta: "Subscribe to Simple Money for simple money explainers every week."
 
@@ -19,7 +19,7 @@ script:
 
 voice:
   provider: edge-tts
-  name: en-US-BrianMultilingualNeural    # swap to en-IN-PrabhatNeural for an Indian accent
+  name: en-US-AvaMultilingualNeural    # swap to en-IN-PrabhatNeural for an Indian accent
   rate: "-8%"                     # ~138 wpm: calm, steady
   pitch: "+0Hz"
 

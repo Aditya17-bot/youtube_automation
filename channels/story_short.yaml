@@ -7,7 +7,7 @@
 name: "Nightfall Archive"
 format: story
 youtube_account: story           # uploads with secrets/token_story.json
-auto_publish: false
+auto_publish: true
 privacy: private
 cta: "Full story on the channel."
 

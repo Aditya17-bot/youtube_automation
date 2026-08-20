@@ -18,7 +18,7 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
-from core.config import PATHS
+from core.config import PATHS, load_channel
 
 STATUS_PENDING = "pending"
 STATUS_APPROVED = "approved"
@@ -34,8 +34,27 @@ def review_dir(channel: str, slug: str) -> Path:
     return PATHS.review / channel / slug
 
 
+def _auto_publish(channel: str) -> bool:
+    """Whether a channel skips the local queue and goes straight to upload.
+
+    A missing config is not an error: promote() is called in tests under
+    channel names that have no yaml, and the safe answer for anything unknown
+    is the manual gate.
+    """
+    try:
+        return bool(load_channel(channel).get("auto_publish"))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def promote(job_dir: Path, channel: str, slug: str) -> Path:
-    """Copy the finished artefacts out of the work dir into the review queue."""
+    """Copy the finished artefacts out of the work dir into the review queue.
+
+    Lands `pending` unless the channel sets `auto_publish: true`, in which case
+    it lands `approved` and the next `publish run` takes it. That is not a way
+    past review, only a way to move it: those uploads go out `private`, so the
+    video still waits for a human, it just waits in YouTube Studio.
+    """
     dest = review_dir(channel, slug)
     dest.mkdir(parents=True, exist_ok=True)
 
@@ -50,14 +69,18 @@ def promote(job_dir: Path, channel: str, slug: str) -> Path:
     if "final.mp4" not in copied:
         raise FileNotFoundError(f"no final.mp4 in {job_dir}; nothing to review")
 
+    auto = _auto_publish(channel)
     status = {
         "channel": channel,
         "slug": slug,
-        "status": STATUS_PENDING,
+        "status": STATUS_APPROVED if auto else STATUS_PENDING,
         "created": _now(),
         "files": copied,
         "source": str(job_dir),
     }
+    if auto:
+        status["decided"] = _now()
+        status["note"] = "auto_publish: uploaded private, review in YouTube Studio"
     (dest / "status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
     return dest
 

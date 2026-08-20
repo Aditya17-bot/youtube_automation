@@ -41,12 +41,14 @@ and `metadata.json`. Nothing is uploaded without an explicit approve.
 | `core/package.py` | Title, description, chapters, tags, thumbnail |
 | `core/ideate.py` | Topic selection with history, so nothing repeats |
 | `core/review.py` | The human gate |
+| `core/schedule.py` | Turns `cadence.per_week` into which channels run today |
 | `core/imagegen.py` | Local Stable Diffusion, tuned for 4 GB VRAM |
 | `core/affiliate.py` | Amazon links + the static hub site |
 | `formats/finance.py` | Minimalist chart/typography renderer |
 | `formats/story.py` | AI images + Ken Burns camera moves |
 | `formats/product.py` | 9:16 Shorts renderer for affiliate roundups |
 | `channels/*.yaml` | Per-channel voice, palette, cadence, topic bank |
+| `daily.py` | Unattended run: today's cadence, rendered and uploaded private |
 | `tools_make_music.py` | Synthesises a royalty-free ambient bed |
 | `tools_voice_demo.py` | Renders the same text in several voices to compare |
 
@@ -90,8 +92,12 @@ streaming target.
 
 **The review gate is deliberate.** YouTube's inauthentic-content policy is
 enforced at the channel level, so one batch of weak output can cost the channel
-its monetisation. Set `auto_publish: true` per channel only once a format's
-output is consistently good.
+its monetisation.
+
+The four live channels run `auto_publish: true`, which moves that gate rather
+than removing it: a finished video skips `out/review` and uploads **private**,
+so a human still decides what goes public, in YouTube Studio. `daily.py` forces
+`--privacy private` whatever a channel config says.
 
 ## The three channels
 

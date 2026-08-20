@@ -5,7 +5,11 @@ from core.config import load_channel
 from core.script import load_format
 from core.compliance import ComplianceError
 
-GOOD = json.loads(pathlib.Path("out/work/finance/compound-interest/script.json").read_text(encoding="utf-8"))
+# A real generated script, vendored. It used to be read out of out/work, but
+# that directory is purged on approve and on every daily run, so the test died
+# the first time the pipeline was actually used.
+FIXTURE = pathlib.Path(__file__).resolve().parent / "fixtures" / "script_finance.json"
+GOOD = json.loads(FIXTURE.read_text(encoding="utf-8"))
 CH = load_channel("finance")
 FMT = load_format("finance")
 

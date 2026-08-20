@@ -47,6 +47,15 @@ def account_for(channel: str) -> str:
         return channel
 
 
+def has_credentials(channel: str) -> bool:
+    """Whether an authorised token is already on disk for this channel.
+
+    Lets the daily runner skip a channel that was never authorised instead of
+    discovering it halfway through an upload loop.
+    """
+    return _token_path(account_for(channel)).exists()
+
+
 def _client_secret(channel: str) -> Path:
     path = SECRETS / f"client_secret_{channel}.json"
     if not path.exists():
@@ -145,14 +154,35 @@ def upload(channel: str, slug: str, *, privacy: str | None = None,
 
     thumb = folder / "thumbnail.png"
     if thumb.exists():
-        youtube.thumbnails().set(videoId=video_id, media_body=MediaFileUpload(str(thumb))).execute()
-        print("  thumbnail set")
+        # Custom thumbnails need a phone-verified channel. The video is already
+        # up by this point, so a refusal here must not abort the run: that would
+        # skip set_status below and the next run would upload a duplicate.
+        try:
+            youtube.thumbnails().set(videoId=video_id, media_body=MediaFileUpload(str(thumb))).execute()
+            print("  thumbnail set")
+        except Exception as exc:  # noqa: BLE001
+            print(f"  thumbnail skipped: {exc}")
 
     set_status(channel, slug, STATUS_PUBLISHED, note=f"https://youtu.be/{video_id}")
 
+    # The upload keeps the mp4 open, and Windows refuses to unlink a file with a
+    # live handle. Nothing needs the stream once the last chunk is acknowledged.
+    try:
+        media.stream().close()
+    except Exception:  # noqa: BLE001
+        pass
+
     # YouTube now holds the copy that matters, so the local renders are dead
     # weight. Metadata and status stay, which is what topic history reads.
-    freed = 0 if keep_local else purge_work(channel, slug) + purge_published(channel, slug)
+    # Failing to reclaim disk is untidy, not fatal: the video is already up and
+    # marked published, and letting it raise here would abandon every other
+    # video queued behind this one.
+    freed = 0
+    if not keep_local:
+        try:
+            freed = purge_work(channel, slug) + purge_published(channel, slug)
+        except OSError as exc:
+            print(f"  local files kept: {exc}")
     if freed:
         print(f"  reclaimed {human(freed)}")
 

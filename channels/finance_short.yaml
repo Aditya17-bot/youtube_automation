@@ -11,7 +11,7 @@
 name: "Simple Money"
 format: finance
 youtube_account: finance         # uploads with secrets/token_finance.json
-auto_publish: false
+auto_publish: true
 privacy: private
 cta: "Full explainer on the channel."
 
@@ -29,7 +29,7 @@ script:
 
 voice:
   provider: edge-tts
-  name: en-US-BrianMultilingualNeural
+  name: en-US-AvaMultilingualNeural
   rate: "+8%"
   pitch: "+0Hz"
 

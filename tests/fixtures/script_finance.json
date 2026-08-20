@@ -1,0 +1,349 @@
+{
+  "topic_id": "compound-interest",
+  "title": "How Compound Interest Actually Works (Simple Explanation)",
+  "golden_rule": "Start early and stay invested. Time does more work than money.",
+  "description": "Compound interest is the simplest money idea and the most misunderstood. In this video we break it down in plain language for salaried beginners in India. You will see how interest earning interest changes the shape of your money over time, why the last few years matter most, and why starting early beats starting big. This video is for education only. It is not investment advice, and nothing here is a recommendation to invest in anything.",
+  "tags": [
+    "compound interest",
+    "personal finance india",
+    "money basics",
+    "saving money",
+    "compounding explained",
+    "finance for beginners",
+    "simple money",
+    "financial literacy",
+    "salary saving",
+    "money management",
+    "investing basics",
+    "time value of money"
+  ],
+  "sections": [
+    {
+      "id": "hook",
+      "beats": [
+        {
+          "vo": "Here is a strange question. Would you rather save five thousand rupees a month for thirty years, or ten thousand a month for fifteen years?",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "Which one wins?",
+              "sub": "Small and long, or big and short"
+            }
+          }
+        },
+        {
+          "vo": "Most people say the bigger amount. Most people are wrong. And the reason is the most powerful idea in money.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "Time beats size",
+              "sub": "The reason surprises almost everyone"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "lesson",
+      "beats": [
+        {
+          "vo": "Compound interest just means this. Your money earns. Then those earnings start earning too.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "Earnings earn earnings",
+              "sub": "That is the whole idea"
+            }
+          }
+        },
+        {
+          "vo": "Think of a single mango tree. In year one, it gives you seeds. You could eat them. Or you could plant them.",
+          "visual": {
+            "type": "split_compare",
+            "spec": {
+              "left": {
+                "title": "Eat the seeds",
+                "items": [
+                  "One tree forever",
+                  "Same harvest yearly",
+                  "Growth stops"
+                ]
+              },
+              "right": {
+                "title": "Plant the seeds",
+                "items": [
+                  "Two trees, then four",
+                  "Harvest keeps rising",
+                  "Growth feeds growth"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "vo": "Plant them, and next year you have more trees. Those trees make more seeds. Nobody worked harder. The orchard just grew itself.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "The orchard plants itself",
+              "sub": "You only planted once"
+            }
+          }
+        },
+        {
+          "vo": "Money behaves the same way when you leave it alone. Let us walk through a simple illustration.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "A simple illustration",
+              "sub": "Assumed numbers, not a promise"
+            }
+          }
+        },
+        {
+          "vo": "Imagine you put in five thousand rupees every month. And imagine it grew at twelve percent a year. That rate is an assumption, not a promise.",
+          "visual": {
+            "type": "stat",
+            "spec": {
+              "label": "Money you actually put in",
+              "compute": {
+                "fn": "compound_vs_invested",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 20
+              }
+            }
+          }
+        },
+        {
+          "vo": "Over twenty years, the money you put in from your salary is one number. What it could become is a very different number.",
+          "visual": {
+            "type": "bar_chart",
+            "spec": {
+              "compute": {
+                "fn": "compound_vs_invested",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 20
+              },
+              "caption": "What you put in versus what grew"
+            }
+          }
+        },
+        {
+          "vo": "Look at the gap. You did not earn that gap. Your money earned it while you were busy living your life.",
+          "visual": {
+            "type": "stat",
+            "spec": {
+              "label": "Growth on top of savings",
+              "compute": {
+                "fn": "sip_value",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 20
+              }
+            }
+          }
+        },
+        {
+          "vo": "Now here is the part people miss. Compounding is not a straight line. It is a curve.",
+          "visual": {
+            "type": "line_chart",
+            "spec": {
+              "compute": {
+                "fn": "sip_value",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 20
+              },
+              "caption": "Flat for years, then it bends"
+            }
+          }
+        },
+        {
+          "vo": "For the first several years, it looks boring. Almost flat. Many people quit right here.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "The boring years",
+              "sub": "This is where most people give up"
+            }
+          }
+        },
+        {
+          "vo": "But the curve is not broken. It is loading. The steep part always sits at the end.",
+          "visual": {
+            "type": "line_chart",
+            "spec": {
+              "compute": {
+                "compound_vs_simple": null,
+                "fn": "compound_vs_simple",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 20
+              },
+              "caption": "Simple growth versus compounding"
+            }
+          }
+        },
+        {
+          "vo": "Compare it to simple growth, where only your original money earns. Same rate. Same years. Wildly different ending.",
+          "visual": {
+            "type": "bar_chart",
+            "spec": {
+              "compute": {
+                "fn": "compound_vs_simple",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 20
+              },
+              "caption": "The cost of not compounding"
+            }
+          }
+        },
+        {
+          "vo": "There is a rough shortcut to feel this. Divide seventy two by your assumed rate. That tells you roughly how long money takes to double.",
+          "visual": {
+            "type": "stat",
+            "spec": {
+              "label": "Years to roughly double",
+              "compute": {
+                "fn": "rule_of_72",
+                "annual_rate": 12
+              }
+            }
+          }
+        },
+        {
+          "vo": "And doubling is the whole game. The last double is bigger than every double before it combined.",
+          "visual": {
+            "type": "list_reveal",
+            "spec": {
+              "title": "How doubling stacks",
+              "items": [
+                "One lakh becomes two",
+                "Two becomes four",
+                "Four becomes eight",
+                "The last jump is largest"
+              ]
+            }
+          }
+        },
+        {
+          "vo": "Which brings us back to the opening question. Time matters more than the amount.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "Time is the real input",
+              "sub": "Amount is only the second lever"
+            }
+          }
+        },
+        {
+          "vo": "Waiting five years to start does not cost you five years of savings. It costs you your five steepest years.",
+          "visual": {
+            "type": "bar_chart",
+            "spec": {
+              "compute": {
+                "fn": "cost_of_waiting",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 25,
+                "delay_years": 5
+              },
+              "caption": "Starting now versus starting in five years"
+            }
+          }
+        },
+        {
+          "vo": "Those years sit at the far end of the curve, where the growth is largest. You never get them back.",
+          "visual": {
+            "type": "stat",
+            "spec": {
+              "label": "Cost of a five year delay",
+              "compute": {
+                "fn": "cost_of_waiting",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 25,
+                "delay_years": 5
+              }
+            }
+          }
+        },
+        {
+          "vo": "One more thing worth knowing. Small yearly costs also compound, quietly, in the wrong direction.",
+          "visual": {
+            "type": "bar_chart",
+            "spec": {
+              "compute": {
+                "fn": "fee_drag",
+                "monthly": 5000,
+                "annual_rate": 12,
+                "years": 20,
+                "fee_pct": 1
+              },
+              "caption": "How one percent a year adds up"
+            }
+          }
+        },
+        {
+          "vo": "A single percent sounds tiny over one year. Over twenty years, it is not tiny at all.",
+          "visual": {
+            "type": "list_reveal",
+            "spec": {
+              "title": "What compounding needs",
+              "items": [
+                "Time, more than money",
+                "Regular contributions",
+                "Patience through flat years",
+                "Low costs along the way"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "takeaway",
+      "beats": [
+        {
+          "vo": "So here is the golden rule. Start early and stay invested. Time does more work than money ever will.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "Start early. Stay invested.",
+              "sub": "Time does the heavy lifting"
+            }
+          }
+        },
+        {
+          "vo": "You do not need a big salary to use this. You need a long runway and the patience to be bored.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "Boring is the strategy",
+              "sub": "Nothing here is investment advice"
+            }
+          }
+        },
+        {
+          "vo": "If money made a little more sense today, subscribe. We keep it simple every week.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "Simple Money",
+              "sub": "Subscribe for simple money ideas"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "_topic": {
+    "id": "compound-interest",
+    "title": "How compound interest actually works",
+    "visual": "line_chart"
+  },
+  "_word_count": 440
+}

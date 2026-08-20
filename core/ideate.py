@@ -70,7 +70,67 @@ def next_topic(channel: str, explicit: str | None = None) -> dict:
     return remaining[0]
 
 
+def backfill(channel: str) -> list[str]:
+    """Rebuild topic history from the review queue.
+
+    History lives in state/, the videos live in out/review, and only the second
+    of those is treated as durable anywhere else in the pipeline. When state/ is
+    lost or was never written, next_topic() hands back the first topic in the
+    bank every single run and the channel republishes what it already posted -
+    the exact repetition this module exists to stop. Idempotent, so it is safe
+    to run whenever.
+    """
+    from core.review import list_pending
+
+    bank = {t["id"] for t in load_topics(topic_bank_for(channel))}
+    used = {h["topic_id"] for h in load_history(channel)}
+    added = []
+    for row in list_pending(channel):
+        slug = row.get("slug")
+        if slug not in bank or slug in used:
+            continue
+        meta = Path(row["_dir"]) / "metadata.json"
+        title = slug
+        if meta.exists():
+            title = json.loads(meta.read_text(encoding="utf-8")).get("title", slug)
+        record(channel, slug, title)
+        used.add(slug)
+        added.append(slug)
+    return added
+
+
 def stats(channel: str) -> dict:
     topics = load_topics(topic_bank_for(channel))
     used = {h["topic_id"] for h in load_history(channel)}
     return {"total": len(topics), "used": len(used), "remaining": len(topics) - len(used)}
+
+
+if __name__ == "__main__":
+    import argparse
+
+    from core.config import PATHS
+
+    ap = argparse.ArgumentParser(description="topic history")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p_back = sub.add_parser("backfill", help="rebuild history from the review queue")
+    p_back.add_argument("--channel", help="default: every channel config")
+
+    p_stat = sub.add_parser("stats", help="how much of each topic bank is used")
+    p_stat.add_argument("--channel")
+
+    args = ap.parse_args()
+    names = [args.channel] if args.channel else sorted(
+        p.stem for p in PATHS.channels.glob("*.yaml") if not p.stem.startswith("topics_")
+    )
+
+    for name in names:
+        try:
+            if args.cmd == "backfill":
+                added = backfill(name)
+                print(f"{name:16} +{len(added)}" + (f"  {', '.join(added)}" if added else ""))
+            else:
+                s = stats(name)
+                print(f"{name:16} {s['used']}/{s['total']} used, {s['remaining']} left")
+        except Exception as exc:  # noqa: BLE001 - one bad config must not stop the rest
+            print(f"{name:16} skipped: {exc}")
