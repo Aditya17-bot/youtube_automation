@@ -101,7 +101,7 @@ def find_music(channel: dict) -> Path | None:
     return tracks[0] if tracks else None
 
 
-def build(script_path: Path, channel_name: str = "finance", *, keep_work: bool = True) -> Path:
+def build(script_path: Path, channel_name: str = "finance_short", *, keep_work: bool = True) -> Path:
     channel = load_channel(channel_name)
     theme = Theme.from_channel(channel)
     script = json.loads(Path(script_path).read_text(encoding="utf-8"))
@@ -265,7 +265,7 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser(description="assemble a finished video from script.json")
     ap.add_argument("--script", required=True)
-    ap.add_argument("--channel", default="finance")
+    ap.add_argument("--channel", default="finance_short")
     args = ap.parse_args()
 
     print(f"assembling {args.script}")

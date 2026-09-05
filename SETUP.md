@@ -1,20 +1,30 @@
 # Setup and operating guide
 
-Two YouTube channels, four pipeline configs, one engine.
+Two YouTube channels, two pipeline configs, one engine. **Shorts only.**
 
-| YouTube channel | Long-form config | Shorts config | Affiliate |
+| YouTube channel | Config | Shape | Cadence |
 |---|---|---|---|
-| **Simple Money** | `finance` (16:9, 3-4 min) | `finance_short` (9:16, 40-55 s) | Shorts only |
-| **Nightfall Archive** | `story` (16:9, 4-5 min) | `story_short` (9:16, 45-60 s) | Shorts only |
+| **Simple Money** | `finance_short` | 9:16, 35-52 s | 5/week |
+| **Nightfall Archive** | `story_short` | 9:16, 40-55 s | 5/week |
 
-A Short and its long-form parent share one YouTube account and one topic bank,
-so the Short on a subject funnels into the full video on the same subject.
-Affiliate links sit on the Shorts alone: an explainer that also sells reads as
-an advert, and a horror story interrupted by a shopping list loses the only
-thing the format has.
+The long-form configs (`finance`, `story`) were deleted. They were producing
+0-2 views a video while the Shorts on the same two channels cleared 500+, so
+the whole budget moved to Shorts. The YouTube channels themselves are
+unchanged - the videos already uploaded are still there, and taking them down
+or hiding them is a manual decision in YouTube Studio.
 
-(`product` still exists as a standalone Shorts channel. Ignore it unless you
-want a third channel; nothing depends on it.)
+Two names survive from that arrangement and are worth reading correctly:
+
+- `youtube_account: finance` is the OAuth identity, so uploads keep using
+  `secrets/token_finance.json` with no re-authorisation.
+- `script.topics_from: finance` names the topic BANK
+  (`channels/topics_finance.yaml`). Banks were never tied to channel configs.
+
+Affiliate links sit in each config's `affiliate.picks`, appended to every
+description.
+
+(`product` still exists as a third standalone Shorts channel, idle. Ignore it
+unless you want it; nothing depends on it.)
 
 ---
 
@@ -95,11 +105,15 @@ authorise once in a browser; after that it runs unattended.
    secrets/client_secret_story.json
    ```
 
+   Named for the OAuth identity, not the channel config: `finance_short` sets
+   `youtube_account: finance`, so it looks for `client_secret_finance.json` and
+   caches its token as `token_finance.json`.
+
 6. Authorise each. A browser opens; pick the matching Brand Account:
 
    ```bash
-   .venv/Scripts/python.exe -m core.publish auth --channel finance
-   .venv/Scripts/python.exe -m core.publish auth --channel story
+   .venv/Scripts/python.exe -m core.publish auth --channel finance_short
+   .venv/Scripts/python.exe -m core.publish auth --channel story_short
    ```
 
    It prints the channel it authorised as — check it matches before continuing.
@@ -115,35 +129,34 @@ Quota: `videos.insert` has its own bucket of ~100 uploads/day, separate from the
 
 ```bash
 # 1. make something (topic -> script -> voice -> visuals -> video -> review)
-.venv/Scripts/python.exe pipeline.py --channel finance
+.venv/Scripts/python.exe pipeline.py --channel finance_short
 .venv/Scripts/python.exe pipeline.py --channel finance_short --topic compound-interest
-.venv/Scripts/python.exe pipeline.py --channel story
 .venv/Scripts/python.exe pipeline.py --channel story_short
 
 # 2. watch what came out
 .venv/Scripts/python.exe -m core.review list
 
 # 3. decide (approve purges the work directory)
-.venv/Scripts/python.exe -m core.review approve compound-interest --channel finance
-.venv/Scripts/python.exe -m core.review reject  night-shift-motel --channel story --note "pacing drags"
+.venv/Scripts/python.exe -m core.review approve compound-interest --channel finance_short
+.venv/Scripts/python.exe -m core.review reject  night-shift-motel --channel story_short --note "pacing drags"
 
 # 4. upload everything approved
-.venv/Scripts/python.exe -m core.publish run --channel finance
+.venv/Scripts/python.exe -m core.publish run --channel finance_short
 ```
 
-Pass `--topic <id>` to a Short to make it cover the same subject as a long
-video you already made — that is the funnel.
+Pass `--topic <id>` to pick a subject out of the bank instead of taking the
+next unused one.
 
-Uploads go out **private** by default (`privacy: private` in each channel
-config). Check the video in YouTube Studio, then flip it public there, or run
-`--privacy public` once you trust the output.
+Uploads go out **public** (`privacy: public` in both channel configs), so a
+video is live the moment it finishes uploading. `--privacy private` on either
+`core.publish run` or `daily.py` holds a batch back for one run.
 
 ---
 
 ## 4. Scheduling it
 
 Already wired up. `daily.py` renders whatever today's cadence calls for and
-uploads it **private**; `daily.cmd` is the Task Scheduler wrapper.
+uploads it **public**; `daily.cmd` is the Task Scheduler wrapper.
 
 ```bash
 python daily.py --dry-run     # what today would do
@@ -156,28 +169,27 @@ evenly across the week rather than bunched:
 
 | channel | per week | days |
 |---|---|---|
-| finance | 3 | Mon, Wed, Sat |
 | finance_short | 5 | Mon, Tue, Thu, Fri, Sun |
-| story | 2 | Mon, Fri |
 | story_short | 5 | Mon, Tue, Thu, Fri, Sun |
 | product | - | never (uses `per_day` and has no OAuth client) |
 
 Change a number, and the schedule changes. Nothing else needs editing.
 
-When a Short runs the same day as its long-form parent, it reuses the parent's
-topic, so the Short is a teaser for that video rather than an advert for a
-different one.
+### There is no review gate any more
 
-### The review gate moved, it did not go away
+`auto_publish: true` plus `privacy: public` on both live channels means a
+finished video lands `approved` instead of `pending` and goes straight out,
+public, without anyone watching it. `out/review` is now a record of what
+shipped rather than a gate in front of it.
 
-`auto_publish: true` on the four live channels means a finished video lands
-`approved` instead of `pending`, so the run uploads it without waiting. It goes
-up **private**. You still decide what the world sees - you now decide it in
-YouTube Studio instead of `out/review`.
+That is a real trade, made deliberately for a daily Shorts cadence. What holds
+it up is that the checks all run *before* the render, during script generation:
+the SEBI compliance linter, the duration ceiling, the fiction check and the
+visual contract each reject a script and feed the reason back to the model as a
+retry. Nothing that fails them is ever voiced, let alone uploaded.
 
-`daily.py` forces `--privacy private` whatever the channel config says.
-Overriding that is the one flag that lets this pipeline publish something no
-human has watched.
+Put the gate back for a run with `daily.py --privacy private`, or permanently
+by setting `privacy: private` in a channel config.
 
 ### The scheduled task
 
@@ -235,8 +247,10 @@ sent. Nothing in it can fail a run.
 
 **Do not schedule volume before quality.** YouTube's inauthentic-content policy
 is enforced at the channel level and carries a three-strike path to permanent
-removal from the Partner Program. Two good videos a week beats seven weak ones,
-and private-by-default exists precisely so this decision stays yours.
+removal from the Partner Program. Two good videos a week beats seven weak ones.
+Now that uploads are public on sight, spot-check what went out - `python -m
+core.review list` shows every published slug and its video URL - rather than
+finding out from a strike.
 
 ---
 

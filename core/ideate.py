@@ -39,9 +39,10 @@ def record(channel: str, topic_id: str, title: str) -> None:
 def topic_bank_for(channel: str) -> str:
     """Which topic bank a channel reads.
 
-    Short-form channels set `script.topics_from` to their long-form parent, so
-    both cover the same subject. History stays per channel, so a topic used in
-    a long video is still available for a Short.
+    `script.topics_from` points a channel at a shared bank - both Shorts
+    channels read `topics_<name>.yaml` rather than one named after themselves.
+    History stays per channel, so the banks can be shared without two channels
+    covering the same subject.
     """
     try:
         return load_channel(channel)["script"].get("topics_from") or channel

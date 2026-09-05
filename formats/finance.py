@@ -493,7 +493,7 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser(description="render finance visuals from a script")
     ap.add_argument("--script", required=True)
-    ap.add_argument("--channel", default="finance")
+    ap.add_argument("--channel", default="finance_short")
     ap.add_argument("--beat", type=int, help="render only this beat index")
     ap.add_argument("--still", action="store_true", help="save final PNG only, no mp4")
     args = ap.parse_args()

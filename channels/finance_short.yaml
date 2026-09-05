@@ -1,22 +1,23 @@
-# Vertical Shorts for the SAME YouTube channel as `finance`.
+# Vertical Shorts. The only format this channel publishes.
 #
-# Shorts and the long-form videos share one YouTube channel (youtube_account)
-# and one topic bank (script.topics_from), so a Short acts as a funnel into the
-# long video on the same subject. History is tracked per channel, so a topic
-# used in a long video is still available for a Short.
+# The long-form explainers were retired: they settled at single-digit views
+# while the Shorts cleared 500+ each, so the whole budget goes here.
 #
-# This is where the affiliate links live. The long-form videos deliberately
-# carry none: an explainer that also sells reads as an advert, and the Short is
-# where a viewer is already in a browsing frame of mind.
+# `youtube_account: finance` is the OAuth identity, not a parent channel - it
+# keeps uploading with the token that is already authorised
+# (secrets/token_finance.json) rather than forcing a re-auth.
+#
+# `script.topics_from: finance` names the topic BANK (channels/topics_finance.yaml),
+# which is not tied to a channel config.
 name: "Simple Money"
 format: finance
 youtube_account: finance         # uploads with secrets/token_finance.json
 auto_publish: true
-privacy: private
-cta: "Full explainer on the channel."
+privacy: public   # Shorts go straight out; there is no second review step
+cta: "Subscribe for one money idea a day."
 
 script:
-  topics_from: finance           # same subjects as the long-form videos
+  topics_from: finance           # reads channels/topics_finance.yaml
   target_words: [95, 125]        # 125 words over 9 beats measures 51 s
   duration_range: [35, 52]       # under 60 s or YouTube stops calling it a Short
   beats: [6, 9]
@@ -25,7 +26,7 @@ script:
   structure:
     - {id: hook,     start: 0,  end: 4,  intent: "one blunt question or claim that stops the scroll"}
     - {id: lesson,   start: 4,  end: 42, intent: "the single idea, shown with one number or one chart"}
-    - {id: takeaway, start: 42, end: 52, intent: "the one-line rule, then point to the full video"}
+    - {id: takeaway, start: 42, end: 52, intent: "the one-line rule, then a one-beat subscribe nudge"}
 
 voice:
   provider: edge-tts

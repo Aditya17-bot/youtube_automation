@@ -8,9 +8,13 @@ from core.compliance import ComplianceError
 # A real generated script, vendored. It used to be read out of out/work, but
 # that directory is purged on approve and on every daily run, so the test died
 # the first time the pipeline was actually used.
-FIXTURE = pathlib.Path(__file__).resolve().parent / "fixtures" / "script_finance.json"
+#
+# The Shorts script replaced the long-form one when the long-form channel was
+# retired: validation is per channel config, so a fixture whose word count
+# belongs to a config that no longer exists cannot be validated at all.
+FIXTURE = pathlib.Path(__file__).resolve().parent / "fixtures" / "script_finance_short.json"
 GOOD = json.loads(FIXTURE.read_text(encoding="utf-8"))
-CH = load_channel("finance")
+CH = load_channel("finance_short")
 FMT = load_format("finance")
 
 def expect_reject(data, why):

@@ -1,25 +1,32 @@
-# Vertical horror Shorts for the SAME YouTube channel as `story`.
+# Vertical horror Shorts. The only format this channel publishes.
 #
-# Same YouTube account and same topic bank as the long-form horror videos, so a
-# Short is a cold-open teaser for the full story. Affiliate links live here
-# rather than on the long videos: a horror story interrupted by a shopping list
-# breaks the only thing the format has, which is atmosphere.
+# The long-form stories were retired at 0-2 views each while these Shorts clear
+# 500+, so Nightfall Archive is now a Shorts channel and nothing else.
+#
+# `youtube_account: story` is the OAuth identity, not a parent channel - it
+# keeps the already-authorised token (secrets/token_story.json) in use.
+# `script.topics_from: story` names the topic BANK
+# (channels/topics_story.yaml), which is not tied to a channel config.
+#
+# A Short is now a whole piece, not a teaser: one scene, one turn, and it has
+# to land on its own because there is no longer a full video to send anyone to.
 name: "Nightfall Archive"
 format: story
 youtube_account: story           # uploads with secrets/token_story.json
 auto_publish: true
-privacy: private
-cta: "Full story on the channel."
+privacy: public   # Shorts go straight out; there is no second review step
+cta: "Subscribe to Nightfall Archive for a story every night."
 
 script:
   mode: fiction
-  topics_from: story
+  topics_from: story           # reads channels/topics_story.yaml
   target_words: [80, 110]        # 110 words over 12 beats measures 53 s
   duration_range: [40, 55]       # under 60 s or YouTube stops calling it a Short
   beats: [8, 12]
   tone: >-
     one scene, one turn, no resolution. Present tense where it helps. End on the
-    image, not an explanation
+    image, not an explanation. It is the whole piece, not a trailer: nothing may
+    depend on a longer version existing
   audience: "horror viewers scrolling at night"
 
 voice:

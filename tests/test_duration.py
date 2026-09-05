@@ -16,11 +16,20 @@ from core import script as sc
 from core.config import HEAD_PAD, OUTRO_PAD, TAIL_PAD, load_channel
 from core.schedule import all_channels
 
-story = load_channel("story")
+# The retired long-form horror config, kept verbatim as a regression fixture.
+# The channel no longer exists - it was pulled at 0-2 views a video - but the
+# 8-minute overrun that this module exists to prevent happened under exactly
+# these numbers, so the check has to keep running against them.
+RETIRED_LONGFORM_STORY = {
+    "voice": {"words_per_minute": 134},
+    "script": {"target_words": [480, 590], "duration_range": [230, 300],
+               "beats": [20, 28]},
+}
+story = RETIRED_LONGFORM_STORY
 
 # --- the estimate ----------------------------------------------------------
 wpm = sc.words_per_minute(story)
-assert wpm == 134, f"story voice measured at 134 wpm, config says {wpm}"
+assert wpm == 134, f"the retired story voice measured at 134 wpm, fixture says {wpm}"
 
 bare = sc.estimate_seconds(134, 0, story)
 assert abs(bare - (60 + HEAD_PAD + OUTRO_PAD)) < 0.01, bare
@@ -33,6 +42,7 @@ assert padded - bare > 12, "28 beats should add over 12 seconds of silence"
 print(f"28 beats add {padded - bare:.1f}s that a word count alone never sees")
 
 # --- the script that actually shipped --------------------------------------
+# Still on disk from before the channel was retired; skipped once it is swept.
 real = pathlib.Path("out/review/story/antikythera/script.json")
 if real.exists():
     data = json.loads(real.read_text(encoding="utf-8"))
@@ -83,11 +93,15 @@ for name in all_channels():
     print(f"{name:16} {hi_words:>4} words, {hi_beats:>2} beats -> "
           f"{got:5.1f}s under its {cap:.0f}s ceiling")
 
-# Shorts stop being Shorts at 60 seconds.
+# Shorts stop being Shorts at 60 seconds. Every remaining channel is one:
+# the long-form configs were deleted, and a landscape config reappearing is a
+# regression, not a new channel.
 for name in all_channels():
     cfg = load_channel(name)
-    if (cfg.get("video") or {}).get("height", 0) <= (cfg.get("video") or {}).get("width", 1):
-        continue
+    video = cfg.get("video") or {}
+    assert video.get("height", 0) > video.get("width", 1), (
+        f"{name} is {video.get('width')}x{video.get('height')}; "
+        f"this pipeline publishes vertical Shorts only")
     cap = float((cfg["script"])["duration_range"][1])
     assert cap < 60, f"{name} is vertical but allows {cap}s; over 60 it is not a Short"
     print(f"{name:16} vertical, ceiling {cap:.0f}s, stays a Short")

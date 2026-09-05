@@ -58,12 +58,20 @@ try:
     print(f"3/week spreads to {[schedule.WEEKDAYS[d] for d in three]}")
 
     # --- real configs ------------------------------------------------------
-    assert schedule.cadence("finance") > 0, "finance should declare a cadence"
-    assert schedule.parent_of("finance_short") == "finance"
-    assert schedule.parent_of("finance") is None, "a long channel has no parent"
+    assert schedule.cadence("finance_short") > 0, "finance_short should declare a cadence"
+    assert schedule.cadence("story_short") > 0, "story_short should declare a cadence"
     assert schedule.cadence("product") == 0, "product uses per_day and must idle"
     assert "topics_finance" not in schedule.all_channels(), "topic banks are not channels"
-    print("real configs: shorts map to parents, product idles, banks excluded")
+
+    # The long-form channels are gone; nothing may plan a video for them.
+    live = schedule.all_channels()
+    assert "finance" not in live and "story" not in live, f"long-form still live: {live}"
+
+    # `topics_from` still names a topic bank, but a bank is not a partner
+    # channel, so nothing should be waiting on one to run first.
+    assert schedule.parent_of("finance_short") is None, "topics_finance is a bank, not a channel"
+    assert schedule.parent_of("story_short") is None, "topics_story is a bank, not a channel"
+    print("real configs: shorts only, product idles, banks excluded")
 
     # A Short must never be planned ahead of the parent whose topic it reuses.
     for offset in range(14):

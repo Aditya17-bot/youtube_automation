@@ -1,7 +1,8 @@
 """Human review gate.
 
 Everything the pipeline produces lands here first. Nothing reaches YouTube
-without an explicit approve, unless the channel sets `auto_publish: true`.
+without an explicit approve, unless the channel sets `auto_publish: true` -
+which both live Shorts channels do.
 
 This exists because YouTube's inauthentic-content policy is enforced at the
 CHANNEL level: one run of bad output can cost the whole channel its
@@ -51,9 +52,10 @@ def promote(job_dir: Path, channel: str, slug: str) -> Path:
     """Copy the finished artefacts out of the work dir into the review queue.
 
     Lands `pending` unless the channel sets `auto_publish: true`, in which case
-    it lands `approved` and the next `publish run` takes it. That is not a way
-    past review, only a way to move it: those uploads go out `private`, so the
-    video still waits for a human, it just waits in YouTube Studio.
+    it lands `approved` and the next `publish run` takes it. On the two live
+    Shorts channels that upload straight to `public`, so this queue is a record
+    of what went out rather than a gate in front of it - the checks that stop a
+    bad video all run before the render, in script validation.
     """
     dest = review_dir(channel, slug)
     dest.mkdir(parents=True, exist_ok=True)
@@ -80,7 +82,12 @@ def promote(job_dir: Path, channel: str, slug: str) -> Path:
     }
     if auto:
         status["decided"] = _now()
-        status["note"] = "auto_publish: uploaded private, review in YouTube Studio"
+        note_privacy = "private"
+        try:
+            note_privacy = load_channel(channel).get("privacy", "private")
+        except Exception:  # noqa: BLE001
+            pass
+        status["note"] = f"auto_publish: queued for upload as {note_privacy}"
     (dest / "status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
     return dest
 
@@ -196,7 +203,7 @@ if __name__ == "__main__":
     for name in ("approve", "reject"):
         p = sub.add_parser(name)
         p.add_argument("slug")
-        p.add_argument("--channel", default="finance")
+        p.add_argument("--channel", default="finance_short")
         p.add_argument("--note")
         p.add_argument("--keep", action="store_true",
                        help="keep the working directory instead of purging it")

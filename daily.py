@@ -1,18 +1,21 @@
-"""Unattended daily run: render whatever today's cadence calls for, upload it private.
+"""Unattended daily run: render whatever today's cadence calls for and upload it.
 
     python daily.py --dry-run     # what today would do, without doing it
     python daily.py               # the real thing
     python daily.py --force       # ignore cadence, run every channel
     python daily.py --channels finance_short
 
-Uploads are forced `private` here regardless of channel config. The review gate
-does not disappear when `auto_publish` is on, it moves: the video waits in
-YouTube Studio instead of `out/review`, and a human still decides what goes
-public. Passing --privacy is possible but is the one flag that makes this
-pipeline capable of publishing something nobody has watched.
+Visibility comes from each channel's `privacy:` key, which both live Shorts
+channels now set to `public`. This run therefore publishes without a human
+having watched the video - that is the deliberate trade for a daily Shorts
+cadence, and the guards that used to sit behind the review gate now sit in
+front of the renderer instead: the compliance linter, the duration ceiling and
+the fiction check all reject a script before it is ever voiced.
+
+`--privacy` overrides the config for one run, for a batch you want held back.
 
 One channel failing does not stop the rest. A render can die on a bad LLM
-response or a busy GPU, and losing the other three channels to that is worse
+response or a busy GPU, and losing the day's other channel to that is worse
 than losing one.
 """
 from __future__ import annotations
@@ -101,8 +104,9 @@ def _parse() -> argparse.Namespace:
     ap.add_argument("--dry-run", action="store_true", help="print the plan and stop")
     ap.add_argument("--force", action="store_true", help="ignore cadence")
     ap.add_argument("--channels", nargs="+", help="run exactly these")
-    ap.add_argument("--privacy", default="private",
-                    choices=["private", "unlisted", "public"])
+    ap.add_argument("--privacy", default=None,
+                    choices=["private", "unlisted", "public"],
+                    help="override every channel's configured visibility")
     ap.add_argument("--no-publish", action="store_true", help="render only")
     ap.add_argument("--date", help="pretend it is this date (YYYY-MM-DD)")
     ap.add_argument("--retain-days", type=int, default=retention.DEFAULT_DAYS,

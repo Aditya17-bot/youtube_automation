@@ -1,0 +1,124 @@
+{
+  "topic_id": "rule-of-72",
+  "title": "The Rule of 72: Double Your Money Math In Your Head",
+  "golden_rule": "Divide 72 by the annual rate to estimate years to double.",
+  "thumb": "72 divided by what?",
+  "description": "The Rule of 72 is a mental shortcut that estimates how long money takes to double at a given annual growth rate. Divide 72 by the rate, and you get the approximate number of years. This video explains the maths in plain language with one simple example, so you can sanity-check any growth number in seconds. It is educational content only, not investment advice, and all rates shown are illustrative assumptions. Watch the full video for more beginner money basics.",
+  "tags": [
+    "rule of 72",
+    "compounding",
+    "personal finance india",
+    "money basics",
+    "doubling money",
+    "financial literacy",
+    "beginner investing",
+    "compound interest",
+    "simple money",
+    "finance for beginners",
+    "mental math money",
+    "savings basics"
+  ],
+  "sections": [
+    {
+      "id": "hook",
+      "beats": [
+        {
+          "vo": "How long does money take to double? You can work it out in four seconds.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "Doubling money, done in your head",
+              "sub": "One number does all the work"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "lesson",
+      "beats": [
+        {
+          "vo": "The trick is one number. Seventy-two.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "The number is 72",
+              "sub": null
+            }
+          }
+        },
+        {
+          "vo": "Take the yearly growth rate. Divide seventy-two by it. That answer is roughly the years to double.",
+          "visual": {
+            "type": "list_reveal",
+            "spec": {
+              "title": "How the rule works",
+              "items": [
+                "Take the annual growth rate",
+                "Divide 72 by that rate",
+                "Answer is years to double",
+                "Rough, not exact"
+              ]
+            }
+          }
+        },
+        {
+          "vo": "Say something grew at twelve percent a year. Seventy-two divided by twelve. Six years.",
+          "visual": {
+            "type": "stat",
+            "spec": {
+              "label": "Years to double at 12 percent",
+              "compute": {
+                "fn": "rule_of_72",
+                "annual_rate": 12
+              }
+            }
+          }
+        },
+        {
+          "vo": "Now flip the rate. At six percent a year, the same money takes twelve years. Half the rate, double the wait.",
+          "visual": {
+            "type": "stat",
+            "spec": {
+              "label": "Years to double at 6 percent",
+              "compute": {
+                "fn": "rule_of_72",
+                "annual_rate": 6
+              }
+            }
+          }
+        },
+        {
+          "vo": "It works on the other side too. If prices rise at six percent, your costs double in about twelve years.",
+          "visual": {
+            "type": "stat",
+            "spec": {
+              "label": "Value of 10 lakh after 20 years",
+              "compute": {
+                "fn": "inflation_erosion",
+                "amount": 1000000,
+                "inflation_pct": 6,
+                "years": 20
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "takeaway",
+      "beats": [
+        {
+          "vo": "So remember. Seventy-two divided by the rate equals years to double. Full video has more.",
+          "visual": {
+            "type": "text_card",
+            "spec": {
+              "headline": "72 divided by the rate",
+              "sub": "Roughly the years to double"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

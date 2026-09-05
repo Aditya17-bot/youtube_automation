@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser(description="build metadata + thumbnail")
     ap.add_argument("--script", required=True)
-    ap.add_argument("--channel", default="finance")
+    ap.add_argument("--channel", default="finance_short")
     args = ap.parse_args()
 
     job = Path(args.script).parent

@@ -48,17 +48,22 @@ def all_channels() -> list[str]:
 
 
 def parent_of(channel: str) -> str | None:
-    """The long-form channel a Short funnels into, if any.
+    """The channel whose topic a Short reuses on the same day, if any.
 
-    A Short reads its parent's topic bank, which is what makes it possible to
-    put both on the same subject the same day.
+    `script.topics_from` does double duty: it names a topic BANK, and where a
+    channel of that name also exists it names a same-day partner whose topic
+    gets reused. Since the long-form channels were retired it only ever names a
+    bank, so this returns None - the existence check is what keeps it honest
+    rather than pointing the runner at a config that is not there.
     """
     try:
         cfg = load_channel(channel)
     except Exception:  # noqa: BLE001
         return None
     parent = (cfg.get("script") or {}).get("topics_from")
-    return parent if parent and parent != channel else None
+    if not parent or parent == channel:
+        return None
+    return parent if (PATHS.channels / f"{parent}.yaml").exists() else None
 
 
 def due(channel: str, day: date) -> bool:
@@ -66,11 +71,12 @@ def due(channel: str, day: date) -> bool:
 
 
 def plan(day: date) -> list[str]:
-    """Channels to run on `day`, long-form ahead of the Shorts that follow it.
+    """Channels to run on `day`, any parent ahead of the Shorts that follow it.
 
-    Ordering is not cosmetic: the runner reuses the parent's topic for a Short
+    Ordering is not cosmetic: the runner reuses a parent's topic for a Short
     scheduled the same day, so the parent has to go first for there to be a
-    topic to reuse.
+    topic to reuse. With only Shorts left there are no parents, and this is a
+    plain alphabetical sort.
     """
     todo = [c for c in all_channels() if due(c, day)]
     return sorted(todo, key=lambda c: (parent_of(c) is not None, c))

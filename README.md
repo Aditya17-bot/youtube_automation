@@ -1,6 +1,8 @@
 # youtube_auto
 
 Faceless YouTube automation. One engine, several channels, no paid services.
+**Vertical Shorts only** - the long-form configs were deleted after they
+settled at 0-2 views a video while the Shorts on the same channels cleared 500+.
 
 Each channel is a config file plus a format plugin. The pipeline is identical
 for all of them; only the visual step differs.
@@ -15,16 +17,16 @@ see **[SETUP.md](SETUP.md)**.
 ## Quick start
 
 ```bash
-.venv/Scripts/python.exe pipeline.py --channel finance                 # next unused topic
-.venv/Scripts/python.exe pipeline.py --channel finance --topic rule-of-72
-.venv/Scripts/python.exe pipeline.py --channel finance --script-only   # cheap dry run
+.venv/Scripts/python.exe pipeline.py --channel finance_short                 # next unused topic
+.venv/Scripts/python.exe pipeline.py --channel finance_short --topic rule-of-72
+.venv/Scripts/python.exe pipeline.py --channel story_short --script-only     # cheap dry run
 
 .venv/Scripts/python.exe -m core.review list
-.venv/Scripts/python.exe -m core.review approve rule-of-72 --channel finance
+.venv/Scripts/python.exe -m core.review approve rule-of-72 --channel finance_short
 ```
 
 Output lands in `out/review/<channel>/<slug>/` as `final.mp4`, `thumbnail.png`
-and `metadata.json`. Nothing is uploaded without an explicit approve.
+and `metadata.json`. `pipeline.py` itself never uploads; `daily.py` does.
 
 ## Layout
 
@@ -40,7 +42,7 @@ and `metadata.json`. Nothing is uploaded without an explicit approve.
 | `core/assemble.py` | Per-beat render, concat, caption burn, music mix |
 | `core/package.py` | Title, description, chapters, tags, thumbnail |
 | `core/ideate.py` | Topic selection with history, so nothing repeats |
-| `core/review.py` | The human gate |
+| `core/review.py` | Queue and status ledger; the manual gate for `auto_publish: false` |
 | `core/schedule.py` | Turns `cadence.per_week` into which channels run today |
 | `core/retention.py` | Deletes what nothing reads; never a pending video |
 | `core/notify.py` | Emails when an unattended run needs a human |
@@ -50,7 +52,7 @@ and `metadata.json`. Nothing is uploaded without an explicit approve.
 | `formats/story.py` | AI images + Ken Burns camera moves |
 | `formats/product.py` | 9:16 Shorts renderer for affiliate roundups |
 | `channels/*.yaml` | Per-channel voice, palette, cadence, topic bank |
-| `daily.py` | Unattended run: today's cadence, rendered and uploaded private |
+| `daily.py` | Unattended run: today's cadence, rendered and uploaded public |
 | `tools_make_music.py` | Synthesises a royalty-free ambient bed |
 | `tools_voice_demo.py` | Renders the same text in several voices to compare |
 
@@ -92,28 +94,39 @@ dividing every input by the input count - worth about 6 dB of unexplained
 quiet. The mix passes `normalize=0` and ends with `loudnorm=I=-14`, the
 streaming target.
 
-**The review gate is deliberate.** YouTube's inauthentic-content policy is
-enforced at the channel level, so one batch of weak output can cost the channel
-its monetisation.
+**The guards moved in front of the renderer.** YouTube's inauthentic-content
+policy is enforced at the channel level, so one batch of weak output can cost
+the channel its monetisation.
 
-The four live channels run `auto_publish: true`, which moves that gate rather
-than removing it: a finished video skips `out/review` and uploads **private**,
-so a human still decides what goes public, in YouTube Studio. `daily.py` forces
-`--privacy private` whatever a channel config says.
+Both live channels run `auto_publish: true` and `privacy: public`, so a daily
+Short goes out without anyone watching it first. That is a deliberate trade for
+cadence, and it only holds because nothing weak reaches the renderer: the
+compliance linter, the duration ceiling and the fiction check all reject a
+script during generation, and a rejection is fed back to the model as a retry.
+`out/review` is now a record of what shipped rather than a gate.
 
-## The three channels
+Hold a batch back with `daily.py --privacy private`, which overrides the config
+for that run.
 
-| Channel | Format | Shape | Earns from |
-|---|---|---|---|
-| `finance` - Simple Money | charts + typography, no GPU | 16:9, 3-4 min | ads |
-| `finance_short` | same, vertical | 9:16, 40-55 s | affiliate |
-| `story` - Nightfall Archive | horror fiction, AI images + camera moves | 16:9, 4-5 min | ads |
-| `story_short` | same, vertical | 9:16, 45-60 s | affiliate |
-| `product` - Under Budget | standalone Shorts | 9:16, 40-55 s | affiliate |
+## The channels
 
-A Short shares its parent's YouTube account (`youtube_account`) and topic bank
-(`script.topics_from`), so both cover the same subject and the Short funnels
-into the long video. Affiliate links live on the Shorts only.
+| Channel | Format | Shape | Cadence | Earns from |
+|---|---|---|---|---|
+| `finance_short` - Simple Money | charts + typography, no GPU | 9:16, 35-52 s | 5/week | affiliate |
+| `story_short` - Nightfall Archive | horror fiction, AI images + camera moves | 9:16, 40-55 s | 5/week | affiliate |
+| `product` - Under Budget | standalone Shorts | 9:16, 35-52 s | idle | affiliate |
+
+`finance` and `story` were the long-form halves of the first two channels and
+are gone. Their YouTube channels are unchanged - only the format they publish
+in - so the configs keep the old identities:
+
+- `youtube_account: finance` points at `secrets/token_finance.json`, so no
+  re-authorisation was needed.
+- `script.topics_from: finance` names the topic BANK
+  (`channels/topics_finance.yaml`), which was never tied to a channel config.
+
+`product` declares `cadence.per_day` from an earlier design, which
+`core/schedule.py` reads as zero, so it never enters a plan.
 
 The horror channel is **explicitly fiction**, and enforced as such: passing
 invented horror off as a real account is deceptive and is the fabricated-content
@@ -138,13 +151,14 @@ The rest of the pipeline is shared and needs no changes.
 
 ## Disk
 
-Renders are large: an 8-minute 1080p story video is ~440 MB at YouTube's
-recommended 8 Mbps. Work directories hold per-beat clips, frame dumps and
-padded audio on top of that.
+Renders are smaller than they were - a 50-second vertical Short is tens of
+MB, not the ~440 MB an 8-minute 1080p story cost - but ten a week plus the
+per-beat clips, frame dumps and padded audio in each work directory still add
+up, and the generated-image cache grows fastest of all.
 
 ```bash
 python -m core.review disk                    # what is being used
-python -m core.review approve <slug> --channel story   # purges the work dir
+python -m core.review approve <slug> --channel story_short   # purges the work dir
 python -m core.review purge --work --published --images
 ```
 
@@ -166,10 +180,10 @@ Set `affiliate.associate_tag` in the channel YAML after approval - every link is
 rewritten from that one value. Apply only once the channel and hub have real
 traffic: approval starts a 180-day, three-qualifying-sales clock.
 
-The finance and horror channels carry a hand-written `affiliate.picks` list in
-their config instead of per-video items, appended to every description. That is
-deliberate: neither a finance explainer nor a horror story should have a model
-inventing product claims inside it.
+Both channels carry a hand-written `affiliate.picks` list in their config
+instead of per-video items, appended to every description. That is deliberate:
+neither a money explainer nor a horror story should have a model inventing
+product claims inside it.
 
 ## Requirements
 
@@ -180,7 +194,7 @@ install), and an authenticated `claude` CLI. Everything else is pip.
 # core pipeline
 .venv/Scripts/python.exe -m pip install edge-tts matplotlib numpy pyyaml pydantic mplfinance
 
-# image generation (story + product channels only; ~2.5 GB)
+# image generation (story_short + product channels only; ~2.5 GB)
 .venv/Scripts/python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cu121
 .venv/Scripts/python.exe -m pip install diffusers transformers accelerate safetensors
 

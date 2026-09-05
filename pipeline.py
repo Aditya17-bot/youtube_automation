@@ -1,8 +1,8 @@
 """Single entry point: topic -> script -> video -> review queue.
 
-    python pipeline.py --channel finance
-    python pipeline.py --channel finance --topic rule-of-72
-    python pipeline.py --channel finance --script-only
+    python pipeline.py --channel finance_short
+    python pipeline.py --channel finance_short --topic rule-of-72
+    python pipeline.py --channel story_short --script-only
 
 Nothing here uploads. Publishing is a separate, explicit step so that the
 review gate cannot be skipped by accident.
@@ -66,7 +66,7 @@ def run(channel_name: str, topic_id: str | None = None, script_only: bool = Fals
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="run one video end to end")
-    ap.add_argument("--channel", default="finance")
+    ap.add_argument("--channel", default="finance_short")
     ap.add_argument("--topic", help="topic id; default is the next unused one")
     ap.add_argument("--script-only", action="store_true", help="stop after the script")
     args = ap.parse_args()

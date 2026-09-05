@@ -12,7 +12,7 @@ SETUP (once per channel, ~10 minutes):
 
  3. Credentials -> Create OAuth client ID -> Desktop app -> download JSON.
  4. Save it as  secrets/client_secret_<channel>.json
- 5. Run:  python -m core.publish auth --channel finance
+ 5. Run:  python -m core.publish auth --channel finance_short
     A browser opens once; the refresh token is cached in secrets/.
 
 Quota note: videos.insert moved to its own bucket of roughly 100 uploads/day,
@@ -37,9 +37,9 @@ SECRETS = PATHS.root / "secrets"
 def account_for(channel: str) -> str:
     """Which OAuth identity a channel uploads with.
 
-    A Short and its long-form parent live on the SAME YouTube channel, so they
-    share one set of credentials. `youtube_account` in the Short's config points
-    at the parent; without it a channel authorises for itself.
+    `youtube_account` decouples the config name from the token on disk, so
+    `finance_short` keeps uploading with secrets/token_finance.json instead of
+    needing its own authorisation. Without it a channel authorises for itself.
     """
     try:
         return load_channel(channel).get("youtube_account") or channel
@@ -113,8 +113,9 @@ def upload(channel: str, slug: str, *, privacy: str | None = None,
            keep_local: bool = False) -> str:
     """Upload one reviewed video. Returns the new video id.
 
-    Local renders are purged afterwards unless `keep_local` is set: an 8-minute
-    1080p story video is ~440 MB, which fills a disk quickly at three a week.
+    Local renders are purged afterwards unless `keep_local` is set: even a
+    50-second vertical render plus its cached images adds up quickly at ten
+    videos a week.
     """
     from googleapiclient.http import MediaFileUpload
 
@@ -134,7 +135,10 @@ def upload(channel: str, slug: str, *, privacy: str | None = None,
             "categoryId": meta.get("categoryId", "27"),
         },
         "status": {
-            "privacyStatus": privacy or meta.get("privacyStatus", cfg.get("privacy", "private")),
+            # The config outranks metadata.json: that file is a snapshot taken
+            # when the video was rendered, so a queue built while the channel
+            # was private would otherwise stay private after the switch.
+            "privacyStatus": privacy or cfg.get("privacy") or meta.get("privacyStatus") or "private",
             "selfDeclaredMadeForKids": meta.get("madeForKids", False),
         },
     }
@@ -211,17 +215,17 @@ if __name__ == "__main__":
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p_auth = sub.add_parser("auth", help="one-time browser authorisation")
-    p_auth.add_argument("--channel", default="finance")
+    p_auth.add_argument("--channel", default="finance_short")
 
     p_one = sub.add_parser("upload", help="upload a single reviewed video")
     p_one.add_argument("slug")
-    p_one.add_argument("--channel", default="finance")
+    p_one.add_argument("--channel", default="finance_short")
     p_one.add_argument("--privacy", choices=["private", "unlisted", "public"])
     p_one.add_argument("--keep-local", action="store_true",
                         help="do not purge local renders after upload")
 
     p_all = sub.add_parser("run", help="upload everything approved")
-    p_all.add_argument("--channel", default="finance")
+    p_all.add_argument("--channel", default="finance_short")
     p_all.add_argument("--limit", type=int, default=5)
     p_all.add_argument("--privacy", choices=["private", "unlisted", "public"])
     p_all.add_argument("--keep-local", action="store_true",

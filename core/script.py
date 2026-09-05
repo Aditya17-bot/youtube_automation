@@ -32,8 +32,8 @@ def load_format(name: str):
         raise ValueError(f"no format plugin for {name!r}") from exc
 
 
-def load_topics(channel_slug: str = "finance") -> list[dict]:
-    path = PATHS.channels / f"topics_{channel_slug}.yaml"
+def load_topics(bank_slug: str = "finance") -> list[dict]:
+    path = PATHS.channels / f"topics_{bank_slug}.yaml"
     if not path.exists():
         return []
     with path.open(encoding="utf-8") as fh:
@@ -124,13 +124,17 @@ if __name__ == "__main__":
     from core.config import load_channel
 
     ap = argparse.ArgumentParser(description="generate one script")
-    ap.add_argument("--channel", default="finance")
+    ap.add_argument("--channel", default="finance_short")
     ap.add_argument("--topic", help="topic id (default: first in bank)")
     ap.add_argument("--out", help="write JSON here")
     args = ap.parse_args()
 
+    from core.ideate import topic_bank_for
+
     ch = load_channel(args.channel)
-    topics = load_topics(args.channel)
+    # Via the bank, not the channel name: a channel reads whatever
+    # `script.topics_from` names, which is rarely a bank of its own name.
+    topics = load_topics(topic_bank_for(args.channel))
     topic = topics[0]
     if args.topic:
         topic = next((t for t in topics if t["id"] == args.topic), topics[0])
