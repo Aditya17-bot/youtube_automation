@@ -1,9 +1,14 @@
-"""Which channels are due on a given day.
+"""Which channels are due on a given day, and how many videos each one owes.
 
 `cadence.per_week` sat in every channel config without a single reader. This
 module is the reader. Run days are derived arithmetically from the number
 rather than stored anywhere, so a day the machine was switched off does not
 shift the rest of the week: Wednesday is Wednesday whatever happened Tuesday.
+
+The two cadence keys answer different questions and neither implies the other:
+`per_week` is WHICH days run, `per_day` is HOW MANY videos on one of those
+days. per_week stays the sole on/off switch, so a config carrying only
+`per_day` - product.yaml still does, from an earlier design - never runs.
 """
 from __future__ import annotations
 
@@ -28,17 +33,39 @@ def weekdays_for(per_week: int) -> list[int]:
     return sorted({round(i * 7 / per_week) for i in range(per_week)})
 
 
+def _cadence_cfg(channel: str) -> dict:
+    try:
+        return load_channel(channel).get("cadence") or {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def cadence(channel: str) -> int:
-    """Videos per week for a channel, 0 if it declares none.
+    """Run days per week for a channel, 0 if it declares none.
 
     `product.yaml` uses `per_day` from an earlier design and has no upload
     account, so it reads as 0 and never enters a plan.
     """
-    try:
-        cfg = load_channel(channel)
-    except Exception:  # noqa: BLE001
+    return int(_cadence_cfg(channel).get("per_week") or 0)
+
+
+def per_day(channel: str) -> int:
+    """How many videos this channel makes on a day it runs. Default 1.
+
+    Only consulted for a channel that already passed `due()`, so a stray
+    `per_day` on an idle config cannot bring it back to life. Clamped at 1
+    below and 10 above: ten uploads is roughly where an unverified YouTube
+    account starts refusing them, and a config typo should not spend a night
+    rendering fifty videos that cannot be posted.
+    """
+    if cadence(channel) <= 0:
         return 0
-    return int((cfg.get("cadence") or {}).get("per_week") or 0)
+    return max(1, min(10, int(_cadence_cfg(channel).get("per_day") or 1)))
+
+
+def per_week_videos(channel: str) -> int:
+    """Videos per week, not run days per week - what a topic bank is spent at."""
+    return cadence(channel) * per_day(channel)
 
 
 def all_channels() -> list[str]:
@@ -90,6 +117,8 @@ def describe() -> list[dict]:
         rows.append({
             "channel": ch,
             "per_week": n,
+            "per_day": per_day(ch),
+            "videos_per_week": per_week_videos(ch),
             "days": [WEEKDAYS[d] for d in weekdays_for(n)],
             "parent": parent_of(ch),
         })
@@ -107,12 +136,14 @@ if __name__ == "__main__":
     for row in describe():
         days = ", ".join(row["days"]) if row["days"] else "never"
         parent = f"  (short of {row['parent']})" if row["parent"] else ""
-        print(f"{row['channel']:16} {row['per_week']}/week  {days}{parent}")
+        each = f" x{row['per_day']}" if row["per_day"] > 1 else ""
+        print(f"{row['channel']:16} {row['videos_per_week']} videos/week  "
+              f"{days}{each}{parent}")
 
     today = date.today()
     print()
     for offset in range(7 * args.weeks):
         day = today + timedelta(days=offset)
-        todo = plan(day)
+        todo = [f"{c} x{per_day(c)}" if per_day(c) > 1 else c for c in plan(day)]
         mark = " <- today" if offset == 0 else ""
         print(f"{day:%a %d %b}  {', '.join(todo) if todo else '-'}{mark}")

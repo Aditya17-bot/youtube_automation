@@ -24,15 +24,18 @@ def make_work():
     (work / "final.mp4").write_bytes(b"x" * 100)
 
 
-def write_cfg(auto: bool, per_week: int | None = None):
+def write_cfg(auto: bool, per_week: int | None = None, per_day: int | None = None):
     cfg = {
         "name": "test", "format": "finance",
         "voice": {"provider": "edge-tts", "name": "x"},
         "video": {"width": 1920, "height": 1080},
         "auto_publish": auto,
     }
-    if per_week is not None:
-        cfg["cadence"] = {"per_week": per_week}
+    if per_week is not None or per_day is not None:
+        cad = {}
+        if per_week is not None: cad["per_week"] = per_week
+        if per_day is not None: cad["per_day"] = per_day
+        cfg["cadence"] = cad
     cfg_path.write_text(yaml.safe_dump(cfg), encoding="utf-8")
 
 
@@ -58,14 +61,22 @@ try:
     print(f"3/week spreads to {[schedule.WEEKDAYS[d] for d in three]}")
 
     # --- real configs ------------------------------------------------------
-    assert schedule.cadence("finance_short") > 0, "finance_short should declare a cadence"
+    assert schedule.cadence("finance_short") == 0, "finance_short is paused"
+    assert schedule.per_week_videos("finance_short") == 0, "paused means zero videos"
     assert schedule.cadence("story_short") > 0, "story_short should declare a cadence"
+    assert schedule.per_day("story_short") > 1, "story_short should make several a day"
     assert schedule.cadence("product") == 0, "product uses per_day and must idle"
     assert "topics_finance" not in schedule.all_channels(), "topic banks are not channels"
 
     # The long-form channels are gone; nothing may plan a video for them.
     live = schedule.all_channels()
     assert "finance" not in live and "story" not in live, f"long-form still live: {live}"
+
+    # Nothing but story_short may be planned while the others are paused.
+    for offset in range(14):
+        day = date.fromordinal(date.today().toordinal() + offset)
+        assert schedule.plan(day) == ["story_short"],             f"{day}: expected story_short only, got {schedule.plan(day)}"
+    print("only story_short is live; finance_short and product are paused")
 
     # `topics_from` still names a topic bank, but a bank is not a partner
     # channel, so nothing should be waiting on one to run first.
@@ -82,6 +93,28 @@ try:
             if parent in todo:
                 assert todo.index(parent) < i, f"{day}: {ch} ordered before {parent}"
     print("across two weeks, every Short is planned after its parent")
+
+    # --- per_day -----------------------------------------------------------
+    # per_week is the on/off switch; per_day only says how many on a run day.
+    # A config carrying per_day alone must stay dead - product.yaml is exactly
+    # that, left over from an earlier design.
+    write_cfg(auto=False, per_day=4)
+    assert schedule.cadence(CH) == 0, "per_day alone must not schedule anything"
+    assert schedule.per_day(CH) == 0, "an idle channel owes no videos"
+    assert schedule.per_week_videos(CH) == 0
+
+    write_cfg(auto=False, per_week=7, per_day=3)
+    assert schedule.per_day(CH) == 3
+    assert schedule.per_week_videos(CH) == 21, "7 days x 3 = 21 videos a week"
+
+    write_cfg(auto=False, per_week=5)
+    assert schedule.per_day(CH) == 1, "no per_day means one video per run day"
+
+    write_cfg(auto=False, per_week=7, per_day=500)
+    assert schedule.per_day(CH) == 10, "a typo must not queue 500 renders"
+    write_cfg(auto=False, per_week=7, per_day=0)
+    assert schedule.per_day(CH) == 1, "0 per_day on a running channel still means 1"
+    print("per_day: gated by per_week, defaults to 1, clamped to 10")
 
     # --- auto_publish ------------------------------------------------------
     write_cfg(auto=False, per_week=2)

@@ -1,5 +1,16 @@
 # Original horror premises. Each is a situation, not a plot - the script
 # invents the events. Nothing here references a real place, person or death.
+# Read by core.topicgen when it extends this bank. It is the whole instruction
+# the generator gets about what belongs here, so it has to carry the editorial
+# rules, not just the genre.
+brief: >-
+  Original horror premises for 45-55 second vertical Shorts. Each topic is a
+  SITUATION, not a plot: a specific job, place or routine, plus one thing about
+  it that is wrong. The script invents what happens. Quiet dread over gore,
+  no monsters named, no jump-scare framing. Nothing may reference a real place,
+  person, brand or death. Ordinary night work is the richest seam - people
+  alone with a procedure that has started disagreeing with them.
+
 topics:
   - {id: night-shift-motel,   title: "The night clerk at a highway motel, and the guest in room 12"}
   - {id: after-midnight-radio, title: "A radio station that keeps broadcasting after everyone goes home"}
@@ -61,3 +72,13 @@ topics:
   - {id: night-stock-count,   title: "A warehouse inventory that comes out higher every single time"}
   - {id: surveyors-pegs,      title: "A surveyor whose boundary markers move overnight, always inward"}
   - {id: hedge-maze,          title: "A garden maze that measures differently every morning"}
+  - {id: night-baker-proof, title: "A bakery night shift where one batch of dough rises when nothing else does"}
+  - {id: tunnel-wash-cycle, title: "An automated car wash that runs a cycle with no car inside"}
+  - {id: reservoir-level-clerk, title: "A reservoir keeper whose water level drops on nights with no draw"}
+  - {id: pipeline-pig-tracker, title: "A pipeline technician tracking an inspection tool that slows in one section every pass"}
+  - {id: boiler-house-round, title: "A boiler attendant whose pressure gauge settles only after he leaves the room"}
+  - {id: blood-courier-run, title: "An overnight sample courier whose cooler is heavier arriving than leaving"}
+  - {id: radio-mast-climber, title: "A mast rigger who finds fresh handprints above where the ladder ends"}
+  - {id: cinema-projection-reel, title: "A projectionist screening to an empty hall, and the reel that gains a scene"}
+  - {id: grain-silo-sounding, title: "A grain store where the sounding line reads full after every emptying"}
+  - {id: night-shelf-restock, title: "A supermarket restocker whose aisle refills itself behind him"}

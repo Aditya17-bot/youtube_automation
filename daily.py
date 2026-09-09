@@ -5,8 +5,8 @@
     python daily.py --force       # ignore cadence, run every channel
     python daily.py --channels finance_short
 
-Visibility comes from each channel's `privacy:` key, which both live Shorts
-channels now set to `public`. This run therefore publishes without a human
+Visibility comes from each channel's `privacy:` key, which the one live Shorts
+channel sets to `public`. This run therefore publishes without a human
 having watched the video - that is the deliberate trade for a daily Shorts
 cadence, and the guards that used to sit behind the review gate now sit in
 front of the renderer instead: the compliance linter, the duration ceiling and
@@ -27,7 +27,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pipeline
-from core import ideate, notify, publish, retention, review, schedule
+from core import ideate, notify, publish, retention, review, schedule, topicgen
 from core.config import PATHS
 
 
@@ -61,41 +61,61 @@ class Tee:
         self.stream.flush()
 
 
-def topic_for(channel: str, preferred: str | None = None) -> str:
+def topic_for(channel: str, preferred: str | None = None,
+              taken: set[str] | None = None) -> str:
     """Resolve which topic a channel should cover.
 
     `preferred` is the topic its long-form parent is doing today. Reusing it is
     the whole point of the Short: same subject, so the Short funnels into the
     long video rather than advertising a different one. Falls back to the next
     unused topic when the Short has already covered it.
+
+    `taken` is what earlier videos in the same run already claimed. Nothing is
+    written to history until a render finishes, so without it a channel making
+    three videos today would make the same one three times.
     """
-    if preferred:
+    taken = taken or set()
+    if preferred and preferred not in taken:
         used = {h["topic_id"] for h in ideate.load_history(channel)}
         if preferred not in used:
             try:
                 return ideate.next_topic(channel, preferred)["id"]
             except KeyError:
                 pass  # not in this channel's bank; fall through
-    return ideate.next_topic(channel)["id"]
+    return ideate.next_topic(channel, exclude=taken)["id"]
 
 
-def build_plan(day: date, only: list[str] | None, force: bool) -> list[tuple[str, str]]:
-    """Today's (channel, topic_id) pairs, parents before their Shorts."""
+def build_plan(day: date, only: list[str] | None, force: bool,
+               per_day: int | None = None) -> list[tuple[str, str]]:
+    """Today's (channel, topic_id) pairs, parents before their Shorts.
+
+    A channel appears once per video it owes today, so `cadence.per_day: 3`
+    yields three pairs and three separate renders. Running out of topics
+    part-way through is not an error: the pairs already collected still run.
+    """
     channels = only or (schedule.all_channels() if force else schedule.plan(day))
     if force or only:
         channels = sorted(channels, key=lambda c: (schedule.parent_of(c) is not None, c))
 
     chosen: dict[str, str] = {}
+    taken: dict[str, set[str]] = {}
     pairs: list[tuple[str, str]] = []
     for channel in channels:
         parent = schedule.parent_of(channel)
-        try:
-            topic = topic_for(channel, chosen.get(parent) if parent else None)
-        except Exception as exc:  # noqa: BLE001 - an exhausted bank is not fatal
-            print(f"skip {channel}: {exc}")
-            continue
-        chosen[channel] = topic
-        pairs.append((channel, topic))
+        # --channels/--force name a channel explicitly; honour its per_day, but
+        # a channel with no cadence at all still owes exactly one video.
+        wanted = per_day if per_day is not None else (schedule.per_day(channel) or 1)
+        for _ in range(wanted):
+            claimed = taken.setdefault(channel, set())
+            try:
+                topic = topic_for(channel, chosen.get(parent) if parent else None,
+                                  claimed)
+            except Exception as exc:  # noqa: BLE001 - an exhausted bank is not fatal
+                print(f"skip {channel}: {exc}")
+                break
+            claimed.add(topic)
+            chosen.setdefault(channel, topic)
+            pairs.append((channel, topic))
     return pairs
 
 
@@ -104,6 +124,10 @@ def _parse() -> argparse.Namespace:
     ap.add_argument("--dry-run", action="store_true", help="print the plan and stop")
     ap.add_argument("--force", action="store_true", help="ignore cadence")
     ap.add_argument("--channels", nargs="+", help="run exactly these")
+    ap.add_argument("--per-day", type=int, default=None,
+                    help="override how many videos each channel makes today")
+    ap.add_argument("--no-topic-refill", action="store_true",
+                    help="do not extend a topic bank that is running low")
     ap.add_argument("--privacy", default=None,
                     choices=["private", "unlisted", "public"],
                     help="override every channel's configured visibility")
@@ -131,24 +155,44 @@ def run(args: argparse.Namespace, day: date) -> tuple[int, list[str]]:
         if recovered:
             print(f"history: recovered {len(recovered)} topic(s) for {channel}")
 
-    # Checked before the plan, because a bank that has just run dry produces
-    # no pair at all - the channel goes quiet and there is nothing in the plan
-    # left to notice it by.
+    # Before the plan, because the plan is what spends the bank. At three
+    # videos a day a sixty-topic bank is gone in twenty days, so waiting for a
+    # human to read the warning email is not a strategy.
+    # Skipped on a dry run: it calls a model and rewrites a bank file, and a
+    # dry run is meant to be free and read-only.
+    if not args.no_topic_refill and not args.dry_run:
+        for channel in schedule.all_channels():
+            try:
+                new = topicgen.top_up(channel)
+            except Exception as exc:  # noqa: BLE001 - never lose a run to this
+                if schedule.per_day(channel):
+                    problems.append(f"{channel}: topic refill failed: "
+                                    f"{type(exc).__name__}: {exc}")
+                continue
+            if new:
+                print(f"topics: +{len(new)} generated for {channel}")
+
+    # Checked after the refill, so the warning only fires for a bank that could
+    # not be topped up. A bank that has just run dry produces no pair at all -
+    # the channel goes quiet and there is nothing in the plan left to notice it by.
     for warning in notify.low_banks():
         print(f"topics: {warning}")
         problems.append(warning)
 
-    pairs = build_plan(day, args.channels, args.force)
+    pairs = build_plan(day, args.channels, args.force, args.per_day)
     if not pairs:
         print("nothing scheduled today")
         return 0, problems
 
+    warned: set[str] = set()
     for channel, topic in pairs:
         if publish.has_credentials(channel):
             note = ""
         else:
             note = "   [no credentials: render only]"
-            problems.append(f"{channel}: not authorised, video will not upload")
+            if channel not in warned:   # one email line per channel, not per video
+                warned.add(channel)
+                problems.append(f"{channel}: not authorised, video will not upload")
         print(f"plan: {channel:16} {topic}{note}")
 
     if args.dry_run:

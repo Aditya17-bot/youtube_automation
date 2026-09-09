@@ -109,7 +109,9 @@ def low_banks(weeks: int = LOW_BANK_WEEKS) -> list[str]:
 
     out = []
     for channel in schedule.all_channels():
-        per_week = schedule.cadence(channel)
+        # Videos per week, not run days per week: a channel making three a day
+        # empties its bank three times faster than its per_week suggests.
+        per_week = schedule.per_week_videos(channel)
         if per_week <= 0:
             continue  # a channel that never runs cannot run dry
         try:

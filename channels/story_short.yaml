@@ -72,14 +72,11 @@ captions:
   enabled: true
   max_chars: 26
 
-affiliate:
-  associate_tag: ""
-  marketplace: in
-  hub_url: ""
-  picks:
-    - {name: "Horror short story collections", why: "Where this kind of slow-burn dread comes from.", search_query: "horror short story collection paperback"}
-    - {name: "Clip-on reading light", why: "For reading these at night without lighting the room.", search_query: "clip on book reading light rechargeable"}
-    - {name: "Over-ear headphones", why: "Most of the atmosphere here is in the audio.", search_query: "over ear headphones wired"}
-
 cadence:
-  per_week: 5
+  # per_week picks WHICH days run (7 = every day), per_day how many videos on
+  # each of those days. Three is what one machine gets through comfortably in a
+  # night; raise it only after watching a run finish inside its window, since
+  # every extra video is another full render plus another upload against the
+  # day's API quota.
+  per_week: 7
+  per_day: 3

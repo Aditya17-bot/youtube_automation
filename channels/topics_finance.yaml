@@ -1,6 +1,14 @@
 # SEBI-safe topic bank: financial literacy only.
 # Nothing here names a security, fund, or broker, or implies a buy/sell action.
 # `visual` is a hint to the script generator, not a hard constraint.
+# Read by core.topicgen when it extends this bank.
+brief: >-
+  Financial-literacy explainers for 35-52 second vertical Shorts, aimed at
+  Indian beginners. Each topic teaches ONE mechanism that can be shown with a
+  single number or chart. SEBI-safe: never name a security, fund, broker or
+  platform, and never imply a buy or sell action. Explain how a thing works,
+  never what to do.
+
 topics:
   - {id: compound-interest,     title: "How compound interest actually works", visual: line_chart}
   - {id: rule-of-72,            title: "The Rule of 72: doubling your money in your head", visual: stat}

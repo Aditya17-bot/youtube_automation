@@ -1,7 +1,13 @@
-# Vertical Shorts. The only format this channel publishes.
+# PAUSED. Not in the daily plan, not uploading.
 #
-# The long-form explainers were retired: they settled at single-digit views
-# while the Shorts cleared 500+ each, so the whole budget goes here.
+# The finance Shorts underperformed next to Nightfall Archive, so the whole
+# budget moved there. `cadence.per_week: 0` is what actually stops it:
+# core.schedule.cadence() reads 0 and the channel never enters a plan, and
+# notify.low_banks() skips it too. auto_publish/privacy are belt and braces -
+# if it is ever run by hand with --channels or --force, the video lands in the
+# review queue as private instead of going straight out.
+#
+# To restart: set per_week back to 5 and auto_publish back to true.
 #
 # `youtube_account: finance` is the OAuth identity, not a parent channel - it
 # keeps uploading with the token that is already authorised
@@ -12,8 +18,8 @@
 name: "Simple Money"
 format: finance
 youtube_account: finance         # uploads with secrets/token_finance.json
-auto_publish: true
-privacy: public   # Shorts go straight out; there is no second review step
+auto_publish: false
+privacy: private
 cta: "Subscribe for one money idea a day."
 
 script:
@@ -67,14 +73,5 @@ captions:
   enabled: true
   max_chars: 26
 
-affiliate:
-  associate_tag: ""              # set after Amazon Associates approval
-  marketplace: in
-  hub_url: ""
-  picks:
-    - {name: "Personal finance books", why: "The ideas in these videos, at book length.", search_query: "personal finance books india beginners"}
-    - {name: "Budget planner notebook", why: "Writing spending down beats any app, for most people.", search_query: "budget planner notebook expense tracker"}
-    - {name: "Document organiser box", why: "Somewhere for policies and tax papers to live.", search_query: "document organizer file storage box"}
-
 cadence:
-  per_week: 5
+  per_week: 0        # paused; 0 = never planned

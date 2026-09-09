@@ -1,11 +1,17 @@
 # Setup and operating guide
 
-Two YouTube channels, two pipeline configs, one engine. **Shorts only.**
+Two YouTube channels, one of them running. **Shorts only.**
 
 | YouTube channel | Config | Shape | Cadence |
 |---|---|---|---|
-| **Simple Money** | `finance_short` | 9:16, 35-52 s | 5/week |
-| **Nightfall Archive** | `story_short` | 9:16, 40-55 s | 5/week |
+| **Nightfall Archive** | `story_short` | 9:16, 40-55 s | **3/day, every day** |
+| **Simple Money** | `finance_short` | 9:16, 35-52 s | paused |
+
+Simple Money is paused, not deleted: `cadence.per_week: 0` keeps it out of
+every plan, and `auto_publish: false` / `privacy: private` mean even a manual
+`--channels finance_short` run lands in the review queue instead of going
+public. Its token, topic bank and history are untouched, so restarting it is
+setting `per_week` back to 5 and `auto_publish` back to true.
 
 The long-form configs (`finance`, `story`) were deleted. They were producing
 0-2 views a video while the Shorts on the same two channels cleared 500+, so
@@ -20,8 +26,10 @@ Two names survive from that arrangement and are worth reading correctly:
 - `script.topics_from: finance` names the topic BANK
   (`channels/topics_finance.yaml`). Banks were never tied to channel configs.
 
-Affiliate links sit in each config's `affiliate.picks`, appended to every
-description.
+Neither Shorts config carries affiliate links any more. The `affiliate.picks`
+block that used to append Amazon links to every description was removed from
+both - it earned nothing and pushed the actual description down the page. Only
+`product` builds links, and it is idle.
 
 (`product` still exists as a third standalone Shorts channel, idle. Ignore it
 unless you want it; nothing depends on it.)
@@ -164,20 +172,48 @@ python -m core.schedule       # the cadence table and the next two weeks
 python daily.py --force       # every channel now, ignoring cadence
 ```
 
-What runs when comes from `cadence.per_week` in each channel config, spread
-evenly across the week rather than bunched:
+What runs when comes from two keys in each channel config. `cadence.per_week`
+is which days run, spread evenly across the week rather than bunched;
+`cadence.per_day` is how many videos on one of those days:
 
-| channel | per week | days |
-|---|---|---|
-| finance_short | 5 | Mon, Tue, Thu, Fri, Sun |
-| story_short | 5 | Mon, Tue, Thu, Fri, Sun |
-| product | - | never (uses `per_day` and has no OAuth client) |
+| channel | per week | per day | days |
+|---|---|---|---|
+| story_short | 7 | 3 | every day |
+| finance_short | 0 | - | never (paused) |
+| product | - | 1 | never (`per_day` alone does not schedule anything) |
 
 Change a number, and the schedule changes. Nothing else needs editing.
 
+`per_week` is the on/off switch: 0 means the channel never runs whatever
+`per_day` says. `per_day` defaults to 1 and is clamped to 10, which is roughly
+where an unverified YouTube account starts refusing uploads.
+
+**Before raising `per_day` further, watch a run finish.** Three renders plus
+three uploads have to fit inside the Task Scheduler window; a run killed
+part-way leaves the day short, and the log in `state/logs/` is the only place
+that shows how long it actually took.
+
+### Topics refill themselves
+
+Three a day empties a sixty-topic bank in twenty days. At the start of every
+real run (not `--dry-run`), any bank holding under two weeks of runway is
+extended by `core/topicgen.py`, which reads the `brief:` at the top of the
+`topics_*.yaml` for what belongs in it and rejects anything duplicating what is
+already there.
+
+```bash
+python -m core.topicgen --channel story_short     # top up if low
+python -m core.topicgen --bank story --count 40   # extend regardless
+python -m core.ideate stats                       # how much bank is left
+python daily.py --no-topic-refill                 # skip it for one run
+```
+
+Edit the `brief:` if the topics start drifting - it is the entire instruction
+the generator gets.
+
 ### There is no review gate any more
 
-`auto_publish: true` plus `privacy: public` on both live channels means a
+`auto_publish: true` plus `privacy: public` on the live channel means a
 finished video lands `approved` instead of `pending` and goes straight out,
 public, without anyone watching it. `out/review` is now a record of what
 shipped rather than a gate in front of it.
@@ -307,15 +343,16 @@ which is what a re-render actually needs.
 Do not apply to Amazon Associates yet. Approval starts a **180-day,
 three-qualifying-sales** clock, and a channel with no traffic will burn it.
 
-1. **Now** — publish Shorts with the untagged links already in the descriptions.
-   They work; they just earn nothing.
+1. **Now** — nothing. The Shorts descriptions carry no links at all; the
+   `affiliate.picks` blocks were removed from both configs. Re-adding a
+   `picks:` list to a channel YAML is what turns the block back on.
 2. **Build the hub** — push the `hub/` directory to a GitHub Pages repo, then
-   set `affiliate.hub_url` in `finance_short.yaml` and `story_short.yaml`. The
+   set `affiliate.hub_url` in whichever config is meant to carry links. The
    hub is also the "live platform with original content" the application wants.
 3. **At roughly 500-1,000 subscribers with real traffic** — apply, listing both
    the channel and the hub.
-4. **On approval** — set `affiliate.associate_tag` in the two Shorts configs.
-   Every link is rewritten from that one value.
+4. **On approval** — set `affiliate.associate_tag` in any config carrying
+   links. Every link is rewritten from that one value.
 5. **Also apply to the Amazon Influencer Program** — separate from Associates,
    gives you a storefront, and is a better fit for video.
 6. **India-friendly fallbacks while waiting:** Cuelinks, EarnKaro, vCommission

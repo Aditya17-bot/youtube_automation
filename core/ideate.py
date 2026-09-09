@@ -50,7 +50,15 @@ def topic_bank_for(channel: str) -> str:
         return channel
 
 
-def next_topic(channel: str, explicit: str | None = None) -> dict:
+def next_topic(channel: str, explicit: str | None = None,
+               exclude: set[str] | frozenset[str] | None = None) -> dict:
+    """The next unused topic for a channel.
+
+    `exclude` covers topics already claimed in this run but not yet recorded.
+    History is only written once a video finishes rendering, so a day that
+    makes several videos for one channel would otherwise pick the same topic
+    for every one of them.
+    """
     topics = load_topics(topic_bank_for(channel))
     if not topics:
         raise RuntimeError(f"no topic bank for channel {channel!r}")
@@ -61,7 +69,7 @@ def next_topic(channel: str, explicit: str | None = None) -> dict:
             raise KeyError(f"unknown topic id {explicit!r}")
         return found
 
-    used = {h["topic_id"] for h in load_history(channel)}
+    used = {h["topic_id"] for h in load_history(channel)} | set(exclude or ())
     remaining = [t for t in topics if t["id"] not in used]
     if not remaining:
         raise RuntimeError(
