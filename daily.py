@@ -22,12 +22,14 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 import traceback
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pipeline
-from core import ideate, notify, publish, retention, review, schedule, topicgen
+from core import (ideate, llm, notify, publish, retention, review, schedule,
+                  topicgen)
 from core.config import PATHS
 
 
@@ -143,6 +145,23 @@ def run(args: argparse.Namespace, day: date) -> tuple[int, list[str]]:
     problems: list[str] = []
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     print(f"\n=== daily {day:%a %d %b %Y} (started {stamp}) ===")
+
+    # The task is set for 09:00, but the laptop is usually asleep then, so
+    # StartWhenAvailable runs it at login instead - and Claude Code updates
+    # itself at login too, deleting its own binary for the length of an npm
+    # install. On 2026-09-10 the two landed 49 seconds apart and all three
+    # videos died on a missing exe. Wait it out here, once, before the topic
+    # bank and the renderer are committed to anything.
+    if not args.dry_run:
+        began = time.monotonic()
+        try:
+            llm.wait_for_claude()
+        except llm.ClaudeUnavailable as exc:
+            print(f"claude: {exc}")
+            return 1, [f"nothing ran today: {exc}"]
+        waited = time.monotonic() - began
+        if waited >= llm.BIN_POLL:
+            print(f"claude: waited {waited:.0f}s for the binary to come back")
 
     # Cheap, idempotent, and it prevents the worst unattended failure there is:
     # an empty state/ makes next_topic() reoffer the first topic in the bank, so

@@ -242,6 +242,14 @@ and logged in at the scheduled time. `StartWhenAvailable` is set, so a run
 missed because the machine was off happens at the next opportunity instead of
 being skipped.
 
+In practice that next opportunity is the moment you log in - which is also when
+Claude Code installs its own update, deleting and rewriting the `claude` binary
+for the length of a global npm install. A run that starts inside that window
+finds no binary at all. `daily.py` therefore waits up to `llm.BIN_WAIT` seconds
+for it before touching the topic bank, and `ask_json` retries a call the swap
+broke mid-run instead of counting it as a bad answer. If the binary never comes
+back the run stops before spending anything and emails you why.
+
 Each run appends to `state/logs/daily-YYYY-MM-DD.log`. Task Scheduler discards
 stdout, so that file is the only record of a run that failed overnight. One
 channel failing does not stop the others.
