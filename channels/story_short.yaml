@@ -56,12 +56,45 @@ style:
 
 thumbnail:
   scrim: 0.86
-  style: "cinematic horror photo, desaturated, deep blacks, fog, film grain"
-  prompts:
-    - "a pale translucent ghostly figure at the end of a dark corridor, one flickering tube light, thick fog"
-    - "a faint humanoid shape forming in heavy fog on an empty road at night, single sodium streetlamp"
-    - "a shadowy apparition reflected in an antique mirror in an unlit room, candle flame, dust in the air"
-    - "a white shrouded figure standing waist-deep in fog in a field at night, distant farmhouse light"
+  # The thumbnail is a woman's face, every time. It is the one thing that
+  # reliably stops a thumb at feed size, and a face is the reason to click where
+  # an empty corridor is not - the in-video art stays people-free.
+  face: true
+  anchor_y: 0.22      # keep the head high; the headline owns the bottom third
+  # CLIP truncates at 77 tokens and everything past that is silently discarded,
+  # so every line here is kept short: subject + lighting + style + setting has
+  # to fit inside that budget or the tail stops affecting the image at all.
+  style: "horror portrait photo, close up, sharp focus on the eyes, desaturated, deep blacks, film grain"
+  # Combined one axis at a time (see core.thumbnail.pick_prompt): 10 x 8 x 6
+  # combinations, so no two videos in a month share a picture while every one of
+  # them is unmistakably this channel.
+  subjects:
+    - "a gaunt pale woman, wet black hair over half her face, one eye staring into the lens"
+    - "a woman's face, eyes rolled back to solid white, mouth slightly open"
+    - "a woman in a filthy white nightgown, head tilted too far sideways, hair across her mouth"
+    - "a woman's grey face pressed against cracked glass, breath fogging it"
+    - "a woman with hollow black eye sockets, cracks across porcelain-white skin"
+    - "a drowned woman, matted hair on her cheeks, water running off her chin, eyes open"
+    - "a veiled woman in black lace, faint knowing smile, half her face in shadow"
+    - "an old woman in silent mid-scream, tendons standing out in her neck"
+    - "a woman's ash-grey face out of the dark, pupils enormous, unblinking"
+    - "a young woman with stitched-shut eyes, calm, face turned to the lens"
+  settings:
+    - "in an unlit corridor"
+    - "in heavy fog on a night road"
+    - "in a derelict bedroom, peeling wallpaper"
+    - "behind a rain-streaked window"
+    - "in a flooded basement, black water"
+    - "among bare trees, dark forest"
+    - "in an abandoned hospital ward"
+    - "in a dusty attic, dust sheets"
+  lighting:
+    - "one flickering bulb overhead, hard shadows under the eyes"
+    - "cold moonlight on one side, the other side black"
+    - "harsh flashlight from below"
+    - "dim red emergency light"
+    - "a single candle against darkness"
+    - "sodium streetlamp behind her, rim light on her hair"
 
 music:
   enabled: true
