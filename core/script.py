@@ -19,6 +19,7 @@ from pathlib import Path
 
 import yaml
 
+from core import emotion
 from core.config import PATHS
 from core.llm import ask_json
 
@@ -47,7 +48,12 @@ def iter_beats(script: dict):
 
 
 def all_vo(script: dict) -> str:
-    return " ".join(beat["vo"] for beat in iter_beats(script))
+    """Every beat's narration as one string, direction tags removed.
+
+    Stripped because every caller is measuring speech - word counts, runtime
+    estimates - and a "[whispering]" is not spoken.
+    """
+    return emotion.strip(" ".join(beat["vo"] for beat in iter_beats(script)))
 
 
 def word_count(script: dict) -> int:

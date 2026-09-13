@@ -133,6 +133,68 @@ Quota: `videos.insert` has its own bucket of ~100 uploads/day, separate from the
 
 ---
 
+## 2b. Give the horror channel a voice that acts (~5 minutes)
+
+Nightfall Archive narrates with Azure Speech rather than edge-tts, because
+Azure accepts per-sentence delivery direction and edge-tts does not. The script
+writes `[whispering] The light was already on. [terrified] She had not been
+home.`, and each tag becomes an `<mstts:express-as>` span.
+
+**This is free at this volume.** The F0 tier gives 500,000 characters a month
+and never expires; three Shorts a day spend roughly 72,000. Azure still asks
+for a card on the account, and nothing here will reach the paid tier on its
+own — but set a spending alert if that matters to you.
+
+1. Create a **Speech service** resource in the Azure portal. Pick region
+   `eastus` unless you have a reason not to, and pricing tier **F0 (free)**.
+   Only one free Speech resource is allowed per subscription per region.
+
+2. Open the resource, then **Keys and Endpoint**, and copy KEY 1 and the region.
+
+3. Give them to the pipeline, either as environment variables:
+
+   ```powershell
+   setx AZURE_SPEECH_KEY  "<key 1>"
+   setx AZURE_SPEECH_REGION "eastus"
+   ```
+
+   or as `secrets/azure_speech.json`, which is gitignored like everything else
+   there:
+
+   ```json
+   {"key": "<key 1>", "region": "eastus"}
+   ```
+
+   `setx` only affects new shells, and the scheduled task reads the environment
+   it was created with — restart the shell, and re-check the task, or use the
+   file and avoid the question.
+
+4. Confirm it works, and see what the account really offers:
+
+   ```bash
+   .venv/Scripts/python.exe -m core.voice --styles
+   .venv/Scripts/python.exe -m core.voice --provider azure --voice en-US-GuyNeural        --style-degree 1.3 --out out/work/style_test.mp3        --text "[whispering] The light was already on. [terrified] She had not been home."
+   ```
+
+   Listen to it. `style_degree` is the dial worth turning: 1.3 is the shipped
+   value, and much above 1.5 the voice tips from frightened into comic.
+
+5. Re-measure the delivery rate, because the voice changed and every runtime
+   estimate depends on it:
+
+   ```bash
+   .venv/Scripts/python.exe -m core.voice --measure
+   ```
+
+   Put the number it prints for `story_short` into
+   `channels/story_short.yaml` as `voice.words_per_minute`.
+
+**If you skip this section entirely, nothing breaks.** With no key, the run
+prints `azure unavailable`, strips the tags, and narrates with edge-tts. The
+horror just stops acting.
+
+---
+
 ## 3. The daily loop
 
 ```bash

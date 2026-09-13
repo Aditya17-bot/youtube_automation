@@ -30,11 +30,30 @@ script:
   audience: "horror viewers scrolling at night"
 
 voice:
-  provider: edge-tts
-  name: en-US-BrianMultilingualNeural
+  # azure, not edge-tts, for one reason: express-as. A horror Short lives or
+  # dies on delivery, and edge-tts reads every line at the same temperature.
+  # The script now carries a [whispering] / [terrified] tag before each
+  # sentence and core.voice turns those into SSML spans.
+  #
+  # Not free in principle, free in practice: the F0 tier covers 500k characters
+  # a month and three Shorts a day spend about 72k. Set AZURE_SPEECH_KEY and
+  # AZURE_SPEECH_REGION, or write secrets/azure_speech.json. With neither, the
+  # run falls back to edge-tts and reads the script flat rather than failing.
+  provider: azure
+  # Brian Multilingual supports no styles at all. Guy does - terrified,
+  # whispering, sad, unfriendly, shouting - and, unlike Davis, he also exists
+  # on the free edge-tts endpoint, so a run that loses the key keeps the
+  # channel's voice and only loses the acting.
+  # `python -m core.voice --styles` lists what the account really offers.
+  name: en-US-GuyNeural
+  fallback_name: en-US-GuyNeural   # must be a voice edge-tts actually serves
+  default_style: whispering   # applies until the first tag in a beat
+  style_degree: 1.3           # 0.01-2; above ~1.5 Davis starts to sound comic
   rate: "-4%"
   pitch: "-4Hz"
-  words_per_minute: 143   # measured; see core.script.words_per_minute
+  # Re-measure after the voice change: `python -m core.voice --measure`.
+  # 143 was Brian's figure and Davis will not match it.
+  words_per_minute: 143
 
 video:
   width: 1080

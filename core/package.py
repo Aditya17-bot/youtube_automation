@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from core import affiliate, compliance, thumbnail as thumb
+from core import affiliate, compliance, emotion, thumbnail as thumb
 from core.script import iter_beats
 from core.theme import Theme
 
@@ -83,7 +83,9 @@ def render_thumbnail(script: dict, channel: dict, dest: Path) -> Path:
         if visual.get("type") in ("text_card", "title_card") and spec.get("headline"):
             hook = spec["headline"]
             break
-    hook = (hook or script.get("hook") or script["title"]).upper()
+    # Stripped: a story script's hook is copied from a beat, and beats carry
+    # delivery tags that must never reach the thumbnail.
+    hook = emotion.strip(hook or script.get("hook") or script["title"]).upper()
 
     words = hook.split()
     if len(words) > 3:

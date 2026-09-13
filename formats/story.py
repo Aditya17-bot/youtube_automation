@@ -14,7 +14,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from core import imagegen
+from core import emotion, imagegen
 from core.config import ffmpeg_bin, pick_encoder
 from core.script import check_duration
 
@@ -36,6 +36,24 @@ Each beat needs an "image_prompt": a single vivid sentence describing ONE shot.
 
 Also give each beat a "move", one of: zoom_in, zoom_out, pan_left, pan_right,
 pan_up, pan_down. Vary it between consecutive beats.
+"""
+
+DELIVERY_CONTRACT = """
+DELIVERY: put an emotional direction tag in square brackets before each
+sentence of `vo`, naming how the narrator reads that sentence:
+
+  "vo": "[whispering] The hallway light was already on. [fearful] She had not
+  been home in three days."
+
+Use ONLY these tags: {styles}
+
+  - A tag applies until the next tag, so re-tag whenever the delivery shifts.
+  - Tag the first sentence of every beat, so no beat starts undirected.
+  - The tags are never spoken and never appear on screen. Write the sentence
+    exactly as it should be read; do not describe the delivery in the prose.
+  - Restraint scares. Sit in [whispering] and keep [shouting] for the turn, if
+    the story uses it at all. A story shouted throughout is a story nobody
+    finishes.
 """
 
 FACTUAL_RULES = """RULES:
@@ -73,6 +91,7 @@ LENGTH: the combined `vo` text must total {w_lo}-{w_hi} words. Count them.
 
 {rules}
 {visual_contract}
+{delivery_contract}
 
 Break the story into {beat_lo}-{beat_hi} beats. Each beat is 2-4 spoken
 sentences plus one image.
@@ -86,7 +105,7 @@ Return ONLY this JSON:
   "description": "4-6 sentences for the YouTube description, plain text",
   "tags": ["10-14 lowercase youtube tags"],
   "sections": [
-    {{"id":"open","beats":[{{"vo":"...","image_prompt":"...","move":"zoom_in"}}]}},
+    {{"id":"open","beats":[{{"vo":"[whispering] ...","image_prompt":"...","move":"zoom_in"}}]}},
     {{"id":"build","beats":[]}},
     {{"id":"turn","beats":[]}},
     {{"id":"close","beats":[]}}
@@ -109,13 +128,34 @@ _FICTION_BANNED = [
 ALLOWED_MOVES = {"zoom_in", "zoom_out", "pan_left", "pan_right", "pan_up", "pan_down"}
 
 
+def allowed_styles(channel: dict) -> list[str]:
+    """Direction tags this channel's voice can actually act on.
+
+    Empty when the voice supports no styles or the provider is edge-tts, and an
+    empty list is what turns the whole delivery contract off: asking a model for
+    tags that will only be stripped wastes prompt and invites a retry loop over
+    a field nothing reads.
+    """
+    vcfg = channel.get("voice") or {}
+    if vcfg.get("provider") != "azure":
+        return []
+    supported = emotion.styles_for(vcfg["name"])
+    return [s for s in emotion.HORROR_STYLES if emotion.resolve(s, vcfg["name"])] if supported else []
+
+
 def build_prompt(topic: dict, channel: dict) -> str:
     sc = channel["script"]
     w_lo, w_hi = sc["target_words"]
     dur_lo, dur_hi = sc["duration_range"]
     beat_lo, beat_hi = sc.get("beats", [28, 45])
     mode = sc.get("mode", "factual")
+    styles = allowed_styles(channel)
+    delivery = (
+        DELIVERY_CONTRACT.format(styles=", ".join(f"[{s}]" for s in styles))
+        if styles else ""
+    )
     return PROMPT.format(
+        delivery_contract=delivery,
         rules=FICTION_RULES if mode == "fiction" else FACTUAL_RULES,
         channel_name=channel["name"],
         topic_title=topic["title"],
@@ -152,8 +192,12 @@ def validate_script(data: object, channel: dict) -> None:
     if not beat_lo - 6 <= len(beats) <= beat_hi + 6:
         raise ValueError(f"{len(beats)} beats; need {beat_lo}-{beat_hi}")
 
+    styles = allowed_styles(channel)
+    voice_name = (channel.get("voice") or {}).get("name", "")
+
     for i, beat in enumerate(beats):
-        if not beat.get("vo", "").strip():
+        vo = beat.get("vo", "")
+        if not emotion.strip(vo):
             raise ValueError(f"beat {i} has empty vo")
         if not beat.get("image_prompt", "").strip():
             raise ValueError(f"beat {i} has no image_prompt")
@@ -161,8 +205,21 @@ def validate_script(data: object, channel: dict) -> None:
         if move and move not in ALLOWED_MOVES:
             raise ValueError(f"beat {i}: unknown move {move!r}")
 
+        # A tag the voice cannot act on is read flat, which is worse than no
+        # tag at all because the script looks directed and is not. Rejecting
+        # sends the model the allowed list again with a retry left to use it.
+        if styles:
+            bad = emotion.unknown_tags(vo, voice_name)
+            if bad:
+                raise ValueError(
+                    f"beat {i}: unusable delivery tag {bad[0]!r}; "
+                    f"allowed tags are {', '.join(styles)}"
+                )
+            if not emotion.tags(vo):
+                raise ValueError(f"beat {i}: vo must open with a delivery tag")
+
     w_lo, w_hi = channel["script"]["target_words"]
-    spoken = " ".join(b["vo"] for b in beats)
+    spoken = emotion.strip(" ".join(b["vo"] for b in beats))
     words = len(re.findall(r"\b[\w']+\b", spoken))
     if not w_lo - 120 <= words <= w_hi + 160:
         raise ValueError(f"script is {words} words; need {w_lo}-{w_hi}")

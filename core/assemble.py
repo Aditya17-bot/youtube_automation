@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from core import captions as cap
+from core import emotion
 from core import voice as tts
 from core.config import PATHS, ffmpeg_bin, ffprobe_bin, load_channel, pick_encoder
 from core.script import iter_beats, load_format
@@ -127,6 +128,10 @@ def build(script_path: Path, channel_name: str = "finance_short", *, keep_work: 
         result = tts.synthesize(
             beat["vo"], raw,
             voice=vcfg["name"], rate=vcfg.get("rate", "+0%"), pitch=vcfg.get("pitch", "+0Hz"),
+            provider=vcfg.get("provider", "edge-tts"),
+            style=vcfg.get("default_style"),
+            style_degree=vcfg.get("style_degree"),
+            fallback_voice=vcfg.get("fallback_name"),
         )
 
         lead = HEAD_PAD if i == 0 else 0.0
@@ -137,8 +142,12 @@ def build(script_path: Path, channel_name: str = "finance_short", *, keep_work: 
         _pad_audio(raw, padded, duration, lead)
 
         # Sentence ends are derived from the source text, since the TTS word
-        # events carry no punctuation to break on.
-        cue_breaks |= cap.sentence_breaks(result.words, beat["vo"], offset=len(all_words))
+        # events carry no punctuation to break on. Stripped first: a direction
+        # tag left in would count as a word, and a count that disagrees with the
+        # engine's disables sentence breaks for the whole beat.
+        cue_breaks |= cap.sentence_breaks(
+            result.words, emotion.strip(beat["vo"]), offset=len(all_words)
+        )
         for w in result.words:
             all_words.append(tts.Word(w.text, cursor + lead + w.start, cursor + lead + w.end))
 

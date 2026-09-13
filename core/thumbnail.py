@@ -21,7 +21,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
-from core import imagegen
+from core import emotion, imagegen
 
 SIZE_LANDSCAPE = (1280, 720)
 SIZE_VERTICAL = (720, 1280)
@@ -209,7 +209,7 @@ def headline_for(script: dict) -> str:
                 if head:
                     return head
 
-    source = script.get("hook") or script.get("title", "")
+    source = emotion.strip(script.get("hook") or script.get("title", ""))
     clause = re.split(r"[,.;:!?]", source)[0].strip()
     if 0 < len(clause.split()) <= 7:
         return clause

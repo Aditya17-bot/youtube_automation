@@ -37,7 +37,8 @@ and `metadata.json`. `pipeline.py` itself never uploads; `daily.py` does.
 | `core/script.py` | Prompt, visual contract, script validation |
 | `core/compliance.py` | SEBI lag guard + investment-advice linter |
 | `core/fincalc.py` | Verified financial maths (the model never computes figures) |
-| `core/voice.py` | edge-tts narration + word-level timings |
+| `core/voice.py` | Narration (edge-tts or Azure) + word-level timings |
+| `core/emotion.py` | Delivery tags in narration text, and stripping them back out |
 | `core/captions.py` | ASS subtitles built from those timings |
 | `core/assemble.py` | Per-beat render, concat, caption burn, music mix |
 | `core/package.py` | Title, description, chapters, tags, thumbnail |
@@ -73,13 +74,32 @@ is retried, never rendered. The current topic bank is financial *literacy*
 (compounding, SIP mechanics, budgeting, fees), which needs no market data at
 all.
 
-**Captions come from the TTS engine.** edge-tts emits `WordBoundary` events, so
-timings are exact rather than inferred. No Whisper, no forced alignment, no GPU
-on the caption path. Two traps: edge-tts defaults to `SentenceBoundary`, so the
-word-level events must be requested explicitly; and those events carry the bare
-word with no punctuation, so sentence breaks are recovered by counting words
-against the source text (`captions.sentence_breaks`). Without that, cues
+**Captions come from the TTS engine.** Both providers emit word-boundary
+events, so timings are exact rather than inferred. No Whisper, no forced
+alignment, no GPU on the caption path. Three traps: edge-tts defaults to
+`SentenceBoundary`, so the word-level events must be requested explicitly;
+Azure reports no word boundaries for SSML unless
+`SpeechServiceResponse_RequestWordBoundary` is set; and the events carry the
+bare word with no punctuation, so sentence breaks are recovered by counting
+words against the source text (`captions.sentence_breaks`). Without that, cues
 straddle full stops and read as broken subtitles.
+
+**Delivery is directed per sentence.** A horror Short lives on how a line is
+read, and edge-tts reads every line at the same temperature. So a beat's `vo`
+carries inline tags - `[whispering] The light was already on. [terrified] She
+had not been home.` - which `core.voice` turns into Azure
+`<mstts:express-as>` spans. The tags are direction, never speech: everything
+that counts, measures, aligns or displays narration goes through
+`emotion.strip()` first. A tag left in is not a visible bug but a silent one -
+it counts as a word, the count disagrees with the engine's, and
+`captions.sentence_breaks` responds by emitting no breaks for that whole beat.
+
+Azure costs nothing at this volume. The F0 tier covers 500k characters a
+month; three Shorts a day spend about 72k. With no key configured the pipeline
+falls back to edge-tts and reads the script flat rather than failing, which is
+why a channel's `voice.fallback_name` must name a voice the free endpoint
+actually serves - its catalogue is far smaller than a keyed account's, and an
+Azure-only name there returns no audio at all rather than a flat reading.
 
 **Narration is synthesised before visuals are rendered.** Each beat's visual is
 built to the exact length of its own voiceover, which avoids both dead air and
@@ -227,7 +247,7 @@ install), and an authenticated `claude` CLI. Everything else is pip.
 
 ```bash
 # core pipeline
-.venv/Scripts/python.exe -m pip install edge-tts matplotlib numpy pyyaml pydantic mplfinance
+.venv/Scripts/python.exe -m pip install edge-tts azure-cognitiveservices-speech matplotlib numpy pyyaml pydantic mplfinance
 
 # image generation (story_short + product channels only; ~2.5 GB)
 .venv/Scripts/python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cu121
