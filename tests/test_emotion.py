@@ -46,6 +46,14 @@ for style in emotion.HORROR_STYLES:
     assert emotion.resolve(style, VOICE), f"{style} unusable on {VOICE}"
 print(f"all {len(emotion.HORROR_STYLES)} offered styles are usable on {VOICE}")
 
+# And each must resolve to a DIFFERENT style. Offering two words for one
+# delivery ("fearful" and "terrified" are the same Azure style) reads to the
+# model as an extra escalation step, and it writes one the voice cannot deliver.
+resolved = [emotion.resolve(s, VOICE) for s in emotion.HORROR_STYLES]
+dupes = {s for s in resolved if resolved.count(s) > 1}
+assert not dupes, f"offered styles collapse onto the same delivery: {dupes}"
+print(f"all {len(resolved)} resolve to distinct deliveries")
+
 # --- segmentation --------------------------------------------------------
 
 assert emotion.segments("[whispering] One. [terrified] Two.", VOICE, "chat") == [

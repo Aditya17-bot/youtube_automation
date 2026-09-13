@@ -60,7 +60,13 @@ VOICE_STYLES: dict[str, set[str]] = {
 # What a horror script is allowed to ask for. A subset of what the voice can do:
 # the sales-y and service styles are technically available on these voices and
 # would be actively wrong in a ghost story, so they are not offered to the model.
-HORROR_STYLES = ["whispering", "fearful", "terrified", "sad", "unfriendly", "shouting"]
+#
+# Every entry must resolve to a DIFFERENT style, which is why "fearful" is not
+# here despite being the obvious word. It is an alias of "terrified", and
+# offering both taught the model a three-step escalation - whispering, fearful,
+# terrified - that the voice delivered as two. A tag that changes nothing
+# audible is worse than no tag: the script reads as directed and is not.
+HORROR_STYLES = ["whispering", "terrified", "sad", "unfriendly", "shouting"]
 
 # Some styles are documented under one name and accepted under another, and a
 # couple of the obvious words a writer reaches for are not styles at all. Map
