@@ -51,9 +51,10 @@ voice:
   style_degree: 1.3           # 0.01-2; above ~1.5 Davis starts to sound comic
   rate: "-4%"
   pitch: "-4Hz"
-  # Re-measure after the voice change: `python -m core.voice --measure`.
-  # 143 was Brian's figure and Davis will not match it.
-  words_per_minute: 143
+  # Measured on Guy at -4% via `python -m core.voice --measure`, which is a
+  # touch quicker than the 143 Brian delivered. Re-run it if the voice, the
+  # rate or the style degree changes - express-as alters pacing, not just tone.
+  words_per_minute: 147
 
 video:
   width: 1080
