@@ -30,31 +30,20 @@ script:
   audience: "horror viewers scrolling at night"
 
 voice:
-  # azure, not edge-tts, for one reason: express-as. A horror Short lives or
-  # dies on delivery, and edge-tts reads every line at the same temperature.
-  # The script now carries a [whispering] / [terrified] tag before each
-  # sentence and core.voice turns those into SSML spans.
+  # edge-tts, deliberately, after trying the alternative.
   #
-  # Not free in principle, free in practice: the F0 tier covers 500k characters
-  # a month and three Shorts a day spend about 72k. Set AZURE_SPEECH_KEY and
-  # AZURE_SPEECH_REGION, or write secrets/azure_speech.json. With neither, the
-  # run falls back to edge-tts and reads the script flat rather than failing.
-  provider: azure
-  # Brian Multilingual supports no styles at all. Guy does - terrified,
-  # whispering, sad, unfriendly, shouting - and, unlike Davis, he also exists
-  # on the free edge-tts endpoint, so a run that loses the key keeps the
-  # channel's voice and only loses the acting.
-  # `python -m core.voice --styles` lists what the account really offers.
-  name: en-US-GuyNeural
-  fallback_name: en-US-GuyNeural   # must be a voice edge-tts actually serves
-  default_style: whispering   # applies until the first tag in a beat
-  style_degree: 1.3           # 0.01-2; above ~1.5 Davis starts to sound comic
+  # Azure's express-as was wired up and working - a [whispering] / [terrified]
+  # tag before each sentence, turned into SSML spans by core.voice - and the
+  # finished Short was worse. Guy acting the lines came out mannered where
+  # Brian reading them flat comes out cold, and cold is what the format wants.
+  # The machinery is all still here and switching back is this block: set
+  # `provider: azure`, a style-capable voice, and a default_style. See
+  # core/emotion.py and section 2b of SETUP.md.
+  provider: edge-tts
+  name: en-US-BrianMultilingualNeural
   rate: "-4%"
   pitch: "-4Hz"
-  # Measured on Guy at -4% via `python -m core.voice --measure`, which is a
-  # touch quicker than the 143 Brian delivered. Re-run it if the voice, the
-  # rate or the style degree changes - express-as alters pacing, not just tone.
-  words_per_minute: 147
+  words_per_minute: 143   # measured; see core.script.words_per_minute
 
 video:
   width: 1080
