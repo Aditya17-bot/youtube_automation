@@ -201,12 +201,34 @@ def build(script_path: Path, channel_name: str = "finance_short", *, keep_work: 
         cues = cap.group_words(
             all_words, max_chars=ccfg.get("max_chars", 42), breaks=cue_breaks
         )
+        # The hook card is opt-in per channel, and its text comes from the
+        # script rather than from the config: it is the opening line, held
+        # while it is spoken, for the majority of the audience that scrolls
+        # muted and never hears it.
+        hook = str(script.get("hook") or "").strip() if ccfg.get("hook") else None
+        # Held for exactly as long as the first beat's narration, measured
+        # rather than configured. A fixed two seconds looked right on paper and
+        # is wrong in practice: the card vanished mid-sentence on any hook
+        # longer than five words, leaving the line being spoken over nothing.
+        hold = min(max(timings[0].duration, 1.5),
+                   float(ccfg.get("hook_max_hold", 7.0))) if timings else 2.0
+        # Defaults are the 16:9 ones the first channels were built for. A
+        # vertical frame needs both bigger: 46px is unreadable at 1080 wide,
+        # and a 90px bottom margin puts the line under the Shorts UI, which
+        # covers roughly the bottom 250px of the screen with the title, the
+        # handle and the action rail.
+        vertical = theme.height > theme.width
         ass_path = cap.write_ass(
             cues, job / "captions.ass",
             width=theme.width, height=theme.height, font=theme.font,
+            size=int(ccfg.get("size", 64 if vertical else 46)),
+            margin_v=int(ccfg.get("margin_v", 300 if vertical else 90)),
+            bold=bool(ccfg.get("bold", vertical)),
             primary=style.get("text", "#E6EDF3"), outline=style.get("background", "#0E1116"),
+            hook=emotion.strip(hook) if hook else None,
+            hook_hold=hold,
         )
-        print(f"  captions: {len(cues)} cues")
+        print(f"  captions: {len(cues)} cues" + ("  + hook card" if hook else ""))
 
     # --- 4. final mix ------------------------------------------------------
     music = find_music(channel)

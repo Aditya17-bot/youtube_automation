@@ -82,3 +82,33 @@ topics:
   - {id: cinema-projection-reel, title: "A projectionist screening to an empty hall, and the reel that gains a scene"}
   - {id: grain-silo-sounding, title: "A grain store where the sounding line reads full after every emptying"}
   - {id: night-shelf-restock, title: "A supermarket restocker whose aisle refills itself behind him"}
+  - {id: cold-store-rearranged, title: "A cold store nightshift where the pallets are stacked differently each round"}
+  - {id: kiln-fires-alone, title: "A pottery kiln that comes up to temperature on a night nobody loaded it"}
+  - {id: bridge-counter-tally, title: "A bridge inspector whose rivet count comes out short on the return walk"}
+  - {id: switchboard-after-hours, title: "An after-hours switchboard where one extension keeps calling itself"}
+  - {id: night-zoo-keeper, title: "A night keeper at a small animal park, and the enclosure that is always awake"}
+  - {id: orchard-picked-early, title: "An orchard watchman finding rows picked clean before the crew arrives"}
+  - {id: museum-case-rotates, title: "A museum attendant whose display case faces a different way each round"}
+  - {id: borehole-echo-late, title: "A groundwater tester whose dropped stone answers a beat too late"}
+  - {id: proofreader-added-line, title: "A proofreader whose galley gains a sentence she has already corrected"}
+  - {id: ice-rink-tracks, title: "An ice rink resurfacer finding skate tracks on a freshly laid sheet"}
+  - {id: telescope-plate-figure, title: "An observatory assistant whose long exposures show a shape nearer each night"}
+  - {id: bell-foundry-tuning, title: "A bell foundry tuner whose new casting rings a note he has not cut"}
+  - {id: crossing-keeper-gates, title: "A level crossing keeper whose barriers lower for nothing, then stay down"}
+  - {id: mortuary-fridge-list, title: "A mortuary technician whose drawer labels are written in his own hand"}
+  - {id: night-baker-order, title: "A hospital kitchen night order for meals on a ward with no patients"}
+  - {id: canal-lock-cycles, title: "A lock keeper whose gates cycle for a boat that never passes through"}
+  - {id: wind-farm-spinning, title: "A turbine technician on a still night, and the one blade still turning"}
+  - {id: tannery-night-vats, title: "A tannery night man whose vats are emptier than the day's hides explain"}
+  - {id: seismograph-footfall, title: "A monitoring station whose tremors arrive at walking pace"}
+  - {id: prison-corridor-count, title: "A night officer whose cell doors are all locked from the inside"}
+  - {id: auction-lot-unlisted, title: "A saleroom porter cataloguing a lot that no one consigned"}
+  - {id: fog-signal-station, title: "A fog signal operator answering a horn from open water on a clear night"}
+  - {id: cable-splicer-live, title: "A cable splicer finding a dead line carrying a conversation"}
+  - {id: greenhouse-night-growth, title: "A nursery grower whose seedlings put on a week between checks"}
+  - {id: night-scale-weighbridge, title: "A weighbridge operator whose empty lorries weigh the same going out"}
+  - {id: kiln-drier-stack, title: "A timber drier whose stack is a board taller each time he counts it"}
+  - {id: night-scaler-log-pond, title: "A log pond scaler marking trunks that come round again already marked"}
+  - {id: seed-vault-attendant, title: "A seed store attendant whose sealed jars are labelled in a hand nobody uses"}
+  - {id: avalanche-gun-post, title: "A snow control gunner whose charges are answered from a slope with no road"}
+  - {id: night-cleaner-pool-lanes, title: "A hospital corridor cleaner whose wet floor dries in one shape each night"}

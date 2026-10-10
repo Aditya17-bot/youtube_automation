@@ -12,9 +12,9 @@ days. per_week stays the sole on/off switch, so a config carrying only
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, time, timedelta
 
-from core.config import PATHS, load_channel
+from core.config import PATHS, ConfigError, load_channel
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -68,10 +68,18 @@ def per_week_videos(channel: str) -> int:
     return cadence(channel) * per_day(channel)
 
 
+# Prefixes that live in channels/ without being channels. Anything here is data
+# a channel reads, not a channel: `topics_*` are topic banks, `footage_*` are
+# licensed source lists. A file that reaches load_channel without being one
+# fails on the missing `format` key, which reads as a broken config rather than
+# as "that was never a channel".
+NOT_A_CHANNEL = ("topics_", "footage_")
+
+
 def all_channels() -> list[str]:
-    """Every channel config. `topics_*.yaml` are topic banks, not channels."""
+    """Every channel config; the data files in channels/ are skipped."""
     return sorted(p.stem for p in PATHS.channels.glob("*.yaml")
-                  if not p.stem.startswith("topics_"))
+                  if not p.stem.startswith(NOT_A_CHANNEL))
 
 
 def parent_of(channel: str) -> str | None:
@@ -123,6 +131,98 @@ def describe() -> list[dict]:
             "parent": parent_of(ch),
         })
     return rows
+
+
+# --- release times --------------------------------------------------------
+#
+# A day's videos are rendered in one run but must not all appear at once. Three
+# uploads landing in the same minute is a burst, and a burst is the shape the
+# inauthentic-content policy looks for; it also wastes two of the three, since
+# the feed will not show one channel three times in a row to the same viewer.
+#
+# The spacing is done by YouTube rather than by this machine. `videos.insert`
+# accepts `status.publishAt`, so a video can be uploaded now and released hours
+# later whether or not the PC is still on. That also keeps it inside the
+# existing upload scope: `videos.update` would need a write scope the shared
+# token does not have.
+
+# Minimum minutes between "now" and the first slot. An upload takes a couple of
+# minutes and YouTube needs a moment to finish processing; scheduling a release
+# for thirty seconds' time simply fails.
+SLOT_LEAD_MINUTES = 15
+
+
+def _publish_cfg(channel: str) -> dict:
+    try:
+        return load_channel(channel).get("publish") or {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def slot_times(channel: str) -> list[time]:
+    """The times of day this channel releases at, in local time, sorted."""
+    raw = _publish_cfg(channel).get("slots") or []
+    out = []
+    for entry in raw:
+        try:
+            hh, _, mm = str(entry).partition(":")
+            out.append(time(int(hh), int(mm or 0)))
+        except ValueError:
+            raise ConfigError(
+                f"{channel}: publish.slots entry {entry!r} is not HH:MM"
+            ) from None
+    return sorted(out)
+
+
+def publish_slots(channel: str, count: int, now: datetime | None = None,
+                  taken: list[datetime] | None = None) -> list[datetime]:
+    """`count` release times for one day's videos, earliest first.
+
+    Returns an empty list when the channel declares no slots, which is how a
+    channel opts out and keeps publishing immediately.
+
+    Slots already past today roll to tomorrow, so a run that starts at 23:00
+    does not silently schedule three releases into the past - YouTube rejects a
+    `publishAt` in the past, and losing the whole batch to that would be a
+    quiet, total failure.
+
+    `min_gap_hours` is enforced on top of the configured times rather than
+    trusted to them: it is the guarantee the config is trying to express, and a
+    typo that puts two slots ten minutes apart should not be able to break it.
+
+    `taken` are release times already promised to videos that are up but not
+    out yet, and they hold the gap open just as this run's own picks do.
+    Without it the guarantee only holds INSIDE one call: a second publish run
+    the same day - a retry, a manual top-up, a batch finished in two goes -
+    would start again from the same slot and put two videos out together, which
+    is the burst the spacing exists to prevent.
+    """
+    times = slot_times(channel)
+    if not times:
+        return []
+
+    now = now or datetime.now().astimezone()
+    floor = now + timedelta(minutes=SLOT_LEAD_MINUTES)
+    gap = timedelta(hours=float(_publish_cfg(channel).get("min_gap_hours", 0) or 0))
+
+    out: list[datetime] = []
+    claimed = sorted(t.astimezone(now.tzinfo) for t in (taken or []) if t >= floor)
+    day = floor.date()
+    # Bounded rather than `while True`: a min_gap wider than the slots can
+    # satisfy would otherwise spin forever. Two weeks is far past any sane
+    # backlog, and running out is reported rather than silently truncated.
+    for _ in range(14):
+        for t in times:
+            candidate = datetime.combine(day, t).astimezone(now.tzinfo)
+            if candidate < floor:
+                continue
+            if any(abs(candidate - t) < gap for t in out + claimed):
+                continue
+            out.append(candidate)
+            if len(out) == count:
+                return out
+        day += timedelta(days=1)
+    return out
 
 
 if __name__ == "__main__":

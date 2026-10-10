@@ -63,8 +63,13 @@ try:
     # --- real configs ------------------------------------------------------
     assert schedule.cadence("finance_short") == 0, "finance_short is paused"
     assert schedule.per_week_videos("finance_short") == 0, "paused means zero videos"
-    assert schedule.cadence("story_short") > 0, "story_short should declare a cadence"
-    assert schedule.per_day("story_short") > 1, "story_short should make several a day"
+    # clips_short replaced story_short on the same YouTube channel. Exactly one
+    # of the two may be live: both at once would double the day's uploads and
+    # work through the same topic bank twice.
+    assert schedule.cadence("clips_short") > 0, "clips_short is the live channel"
+    assert schedule.per_day("clips_short") > 1, "clips_short should make several a day"
+    assert schedule.cadence("story_short") == 0, "story_short was retired"
+    assert sum(1 for c in ("clips_short", "story_short") if schedule.cadence(c)) == 1
     assert schedule.cadence("product") == 0, "product uses per_day and must idle"
     assert "topics_finance" not in schedule.all_channels(), "topic banks are not channels"
 
@@ -72,16 +77,17 @@ try:
     live = schedule.all_channels()
     assert "finance" not in live and "story" not in live, f"long-form still live: {live}"
 
-    # Nothing but story_short may be planned while the others are paused.
+    # Nothing but clips_short may be planned while the others are paused.
     for offset in range(14):
         day = date.fromordinal(date.today().toordinal() + offset)
-        assert schedule.plan(day) == ["story_short"],             f"{day}: expected story_short only, got {schedule.plan(day)}"
-    print("only story_short is live; finance_short and product are paused")
+        assert schedule.plan(day) == ["clips_short"],             f"{day}: expected clips_short only, got {schedule.plan(day)}"
+    print("only clips_short is live; story_short, finance_short and product are paused")
 
     # `topics_from` still names a topic bank, but a bank is not a partner
     # channel, so nothing should be waiting on one to run first.
     assert schedule.parent_of("finance_short") is None, "topics_finance is a bank, not a channel"
     assert schedule.parent_of("story_short") is None, "topics_story is a bank, not a channel"
+    assert schedule.parent_of("clips_short") is None, "topics_story is a bank, not a channel"
     print("real configs: shorts only, product idles, banks excluded")
 
     # A Short must never be planned ahead of the parent whose topic it reuses.
@@ -146,3 +152,48 @@ finally:
     if cfg_path.exists(): cfg_path.unlink()
     for d in (PATHS.work / CH, PATHS.review / CH):
         if d.exists(): shutil.rmtree(d, ignore_errors=True)
+
+# --- release slots --------------------------------------------------------
+# Three videos rendered in one run must not all appear at once: a burst is the
+# shape the inauthentic-content policy looks for, and the feed will not show one
+# channel three times running to the same viewer anyway.
+from datetime import datetime, time as _time, timedelta   # noqa: E402
+
+assert schedule.slot_times("clips_short") == [_time(5, 30), _time(8, 30), _time(23, 30)]
+assert schedule.slot_times("finance_short") == []      # no slots: publish at once
+
+NOW = datetime(2026, 9, 17, 17, 30).astimezone()
+slots = schedule.publish_slots("clips_short", 3, now=NOW)
+assert len(slots) == 3, slots
+assert [s.strftime("%d %H:%M") for s in slots] == ["17 23:30", "18 05:30", "18 08:30"], slots
+
+# Every gap honours min_gap_hours, which is enforced on top of the configured
+# times rather than trusted to them - a typo must not be able to break it.
+gap = timedelta(hours=3)
+assert all(b - a >= gap for a, b in zip(slots, slots[1:])), slots
+
+# Nothing is ever scheduled into the past: YouTube rejects a publishAt that has
+# already gone, and losing a whole batch to that would be a silent total loss.
+late = schedule.publish_slots("clips_short", 3, now=datetime(2026, 9, 17, 23, 29).astimezone())
+assert all(s > datetime(2026, 9, 17, 23, 29).astimezone() for s in late), late
+assert late[0].day == 18, late      # 23:30 is inside the lead time, so it rolls
+
+# A channel with no slots opts out entirely and keeps publishing immediately.
+assert schedule.publish_slots("finance_short", 3, now=NOW) == []
+print("release slots spaced, never in the past, opt-out respected")
+
+# A slot promised in an EARLIER run is spent. Without this the guarantee only
+# holds inside one call, and a second publish run the same day - a retry, a
+# manual top-up, a batch finished in two goes - starts again from the same slot
+# and puts two videos out together.
+promised = [datetime(2026, 9, 17, 23, 30).astimezone(),
+            datetime(2026, 9, 18, 5, 30).astimezone()]
+after = schedule.publish_slots("clips_short", 3, now=NOW, taken=promised)
+assert [s.strftime("%d %H:%M") for s in after] == ["18 08:30", "18 23:30", "19 05:30"], after
+assert all(abs(a - b) >= gap for a in after for b in promised), after
+
+# A promise already in the past holds nothing open.
+stale = schedule.publish_slots("clips_short", 1, now=NOW,
+                               taken=[datetime(2026, 9, 17, 5, 30).astimezone()])
+assert stale[0].strftime("%d %H:%M") == "17 23:30", stale
+print("slots promised in an earlier run are not handed out twice")

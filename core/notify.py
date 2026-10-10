@@ -125,6 +125,39 @@ def low_banks(weeks: int = LOW_BANK_WEEKS) -> list[str]:
     return out
 
 
+def low_footage(weeks: int = LOW_BANK_WEEKS) -> list[str]:
+    """Channels about to run out of licensed footage.
+
+    The same silent failure as an empty topic bank, and worse to fix in a hurry:
+    a new source has to be found, licence-checked, downloaded and indexed before
+    it can be cut, which is an afternoon rather than a model call.
+    """
+    from core import footage, schedule
+    from core.config import load_channel
+
+    out = []
+    for channel in schedule.all_channels():
+        per_week = schedule.per_week_videos(channel)
+        if per_week <= 0:
+            continue
+        try:
+            cfg = load_channel(channel)
+            if not cfg.get("footage"):
+                continue
+            beats = int(cfg["script"].get("beats", [8, 8])[1])
+            left = footage.runway(cfg["footage"].get("bank", "horror"))["unused"]
+        except Exception:  # noqa: BLE001
+            continue
+        videos = left / max(1, beats)
+        if videos <= per_week * weeks:
+            out.append(
+                f"{channel}: {left} unused shots left, about {videos / per_week:.1f} "
+                f"weeks at {per_week}/week. Add a source to the footage bank, "
+                f"then fetch and index it."
+            )
+    return out
+
+
 def log_tail(path: Path, lines: int = 40) -> str:
     try:
         return "\n".join(path.read_text(encoding="utf-8", errors="replace")

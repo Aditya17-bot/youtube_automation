@@ -4,8 +4,17 @@ Two YouTube channels, one of them running. **Shorts only.**
 
 | YouTube channel | Config | Shape | Cadence |
 |---|---|---|---|
-| **Nightfall Archive** | `story_short` | 9:16, 40-55 s | **3/day, every day** |
+| **Nightfall Archive** | `clips_short` | 9:16, 40-55 s | **3/day, every day, spaced** |
+| **Nightfall Archive** | `story_short` | 9:16, 40-55 s | retired 2026-09-17 |
 | **Simple Money** | `finance_short` | 9:16, 35-52 s | paused |
+
+`clips_short` and `story_short` are the same YouTube channel and only one may
+run. `story_short` narrated over generated stills; `clips_short` cuts real
+public-domain film instead, because the stills read as a slideshow and the
+channel had settled under 100 views a video. Putting `story_short` back is
+`per_week: 7` in its config **and** `per_week: 0` in the other - two configs
+posting to one channel would double the day's uploads and work through the same
+topic bank twice. See section 2c for the footage that feeds `clips_short`.
 
 Simple Money is paused, not deleted: `cadence.per_week: 0` keeps it out of
 every plan, and `auto_publish: false` / `privacy: private` mean even a manual
@@ -195,6 +204,60 @@ horror just stops acting.
 
 ---
 
+## 2c. Footage for the clip channel (~20 minutes per film, once each)
+
+`clips_short` does not generate its pictures, it cuts them out of real film, so
+it needs footage on disk before it can render anything. Everything it may touch
+is listed in `channels/footage_horror.yaml`, which is a **licence whitelist**:
+`core/footage.py` refuses to download a source whose licence is not one of
+`public-domain`, `cc0`, `cc-by` or `cc-by-sa`, and then refuses again if
+archive.org's own metadata disagrees with what the bank claims. Non-commercial
+and no-derivatives licences are rejected on purpose - a monetised Short is a
+commercial derivative of whatever it was cut from.
+
+```bash
+.venv/Scripts/python.exe -m core.footage list       # the bank and its licences
+.venv/Scripts/python.exe -m core.footage fetch --source carnival_of_souls
+.venv/Scripts/python.exe -m core.footage index --source carnival_of_souls
+```
+
+`fetch` pulls the h.264 derivative (300-800 MB, not the 2 GB master). `index`
+decodes it once and writes every usable shot to `state/footage_horror.json`.
+That file is the one that matters: it records which video spent which shot, so
+no two Shorts ever carry the same footage. The film itself can be deleted and
+re-fetched; the index cannot.
+
+Then look at what it found, because the scorer has no taste:
+
+```bash
+.venv/Scripts/python.exe -m core.footage contact --source carnival_of_souls
+```
+
+That writes a numbered contact sheet to `out/work/`. Open it, note the shots
+that are junk - a title card the detector missed, a boom mic, a face mid-blink -
+and blacklist them by number:
+
+```bash
+.venv/Scripts/python.exe -m core.footage drop --source carnival_of_souls --shots 4,17,18
+```
+
+Two more commands worth knowing:
+
+```bash
+.venv/Scripts/python.exe -m core.footage runway                 # days of footage left
+.venv/Scripts/python.exe -m core.footage release --slug <topic-id>
+```
+
+`release` hands a video's shots back when a render failed or the video was
+binned. Footage is claimed the moment a script validates, so a run that dies in
+the renderer leaves its shots spent until you say otherwise.
+
+A feature gives 250-400 usable shots, about a fortnight at 3 videos a day.
+`runway` says so in days; add the next source before it reaches zero, the same
+way `topicgen` tops up a topic bank.
+
+---
+
 ## 3. The daily loop
 
 ```bash
@@ -217,9 +280,23 @@ horror just stops acting.
 Pass `--topic <id>` to pick a subject out of the bank instead of taking the
 next unused one.
 
-Uploads go out **public** (`privacy: public` in both channel configs), so a
-video is live the moment it finishes uploading. `--privacy private` on either
-`core.publish run` or `daily.py` holds a batch back for one run.
+Uploads go out **public**, but not all at once. `clips_short` declares
+`publish.slots`, so a run uploads the day's three videos and hands YouTube a
+release time for each - 05:30, 08:30 and 23:30 local, at least three hours
+apart. YouTube does the waiting, so the machine can be asleep when they go out.
+
+```bash
+.venv/Scripts/python.exe -m core.publish run --channel clips_short          # spaced
+.venv/Scripts/python.exe -m core.publish run --channel clips_short --now    # all at once
+```
+
+A scheduled video sits `private` in YouTube Studio until its slot, with the
+release time shown against it. The slot each video was given is recorded in its
+`status.json`, so a second run the same day does not hand out the same one
+twice.
+
+`--privacy private` on either `core.publish run` or `daily.py` holds a batch
+back for one run.
 
 ---
 
@@ -254,6 +331,22 @@ where an unverified YouTube account starts refusing uploads.
 three uploads have to fit inside the Task Scheduler window; a run killed
 part-way leaves the day short, and the log in `state/logs/` is the only place
 that shows how long it actually took.
+
+### Where the release slots come from
+
+They are a guess, and the config says so. Nightfall Archive has no analytics
+token, so nothing in this project knows where its viewers actually are; the
+three slots cover US evening, US late night and UK evening rather than three
+slots in one market. Mint a read-only analytics token and replace them with the
+real country split:
+
+```bash
+.venv/Scripts/python.exe C:/adi/clip_farm/tools/audience.py --auth
+```
+
+That asks for `yt-analytics.readonly` only, as a separate token. Do not widen
+`core.publish.SCOPES` to get it - that invalidates `token_story.json` and breaks
+the daily upload.
 
 ### Topics refill themselves
 

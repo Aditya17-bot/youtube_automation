@@ -1,0 +1,48 @@
+# Campaign clipping channel, fed by C:\adi\clip_farm -- NOT by this project's
+# generator. Videos arrive already rendered via `python -m clipfarm export`,
+# which writes straight into out/review/moonpay_clips/.
+#
+# `cadence.per_week: 0` keeps daily.py from ever planning this channel, the
+# same guard finance_short uses. The script/voice/video blocks below exist only
+# because core.config.load_channel validates those keys; nothing reads them on
+# the publish path, which only touches `privacy` and `youtube_account`.
+#
+# `youtube_account: moonpay` means uploads use secrets/token_moonpay.json.
+# That token does not exist yet -- create it with:
+#
+#   python -m core.publish auth --channel moonpay_clips
+#
+# and pick the new channel in Google's account chooser. It reuses the existing
+# Cloud project, so copy secrets/client_secret_finance.json to
+# secrets/client_secret_moonpay.json first. No new project, no new audit.
+#
+# `privacy: private` on purpose: check the first few uploads by hand before
+# flipping to public. The campaign requires posts stay up 30 days, so a bad
+# clip going public is expensive to walk back.
+name: "Fintech Unfiltered"
+format: clipfarm
+youtube_account: moonpay
+auto_publish: false
+privacy: private
+
+script:
+  topics_from: none
+  target_words: [0, 0]
+  duration_range: [20, 50]     # campaign brief
+  beats: [1, 1]
+  tone: "not used; clips are cut from source footage, not scripted"
+  audience: "US, UK, Canada and Australia -- the campaign pays on this mix"
+
+voice:
+  provider: none               # not used; source audio is Ivan's own
+  name: none
+  words_per_minute: 0
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  encoder: libx264
+
+cadence:
+  per_week: 0        # never planned by daily.py; clip_farm drives this channel

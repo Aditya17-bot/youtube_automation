@@ -148,8 +148,13 @@ def disk_report() -> dict:
     review = _dir_size(PATHS.review) if PATHS.review.is_dir() else 0
     generated = PATHS.root / "assets" / "generated"
     cache = _dir_size(generated) if generated.is_dir() else 0
+    # Source films, reported but never purged by anything here: deleting one
+    # costs a re-download AND a re-index, and the index is what guarantees no
+    # shot is published twice. Delete a spent film by hand.
+    films = PATHS.assets / "footage"
+    footage = _dir_size(films) if films.is_dir() else 0
     return {"work": work, "review": review, "image_cache": cache,
-            "total": work + review + cache}
+            "footage": footage, "total": work + review + cache + footage}
 
 
 def list_pending(channel: str | None = None) -> list[dict]:
@@ -168,7 +173,13 @@ def list_pending(channel: str | None = None) -> list[dict]:
 
 
 def set_status(channel: str, slug: str, status: str, note: str | None = None,
-               purge: bool = False) -> dict:
+               purge: bool = False, extra: dict | None = None) -> dict:
+    """Move one queued video to `status`. `extra` merges extra fields in.
+
+    `extra` is how a scheduled upload records the release time it was given, so
+    a later run can see which slots are already spoken for. status.json is the
+    only thing that survives a purge, which makes it the right place to keep it.
+    """
     path = review_dir(channel, slug) / "status.json"
     if not path.exists():
         raise FileNotFoundError(f"nothing queued at {path.parent}")
@@ -177,6 +188,8 @@ def set_status(channel: str, slug: str, status: str, note: str | None = None,
     data["decided"] = _now()
     if note:
         data["note"] = note
+    if extra:
+        data.update(extra)
 
     if purge:
         freed = purge_work(channel, slug)
@@ -234,7 +247,7 @@ if __name__ == "__main__":
 
     elif args.cmd == "disk":
         report = disk_report()
-        for key in ("work", "review", "image_cache"):
+        for key in ("work", "review", "image_cache", "footage"):
             print(f"  {key:<12} {human(report[key])}")
         print(f"  {'total':<12} {human(report['total'])}")
 

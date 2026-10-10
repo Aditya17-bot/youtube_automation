@@ -30,7 +30,7 @@ from pathlib import Path
 import pipeline
 from core import (ideate, llm, notify, publish, retention, review, schedule,
                   topicgen)
-from core.config import PATHS
+from core.config import PATHS, load_channel
 
 
 def _log_path(day: date) -> Path:
@@ -163,6 +163,22 @@ def run(args: argparse.Namespace, day: date) -> tuple[int, list[str]]:
         if waited >= llm.BIN_POLL:
             print(f"claude: waited {waited:.0f}s for the binary to come back")
 
+    # A config that will not parse does not raise anywhere useful: every reader
+    # in core.schedule catches and returns a default, so a channel with a broken
+    # YAML simply stops appearing in the plan. That is indistinguishable from a
+    # channel that is switched off, and it cost a day's posting once already -
+    # a stray control character in a comment, and `clips_short` read as 0
+    # videos a week with no error anywhere. Checked here so it becomes an email
+    # rather than silence.
+    for channel in schedule.all_channels():
+        try:
+            load_channel(channel)
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"{channel}: config will not load, so the channel "
+                            f"is being skipped entirely: "
+                            f"{type(exc).__name__}: {exc}")
+            print(f"config: {channel} FAILED TO LOAD - {exc}")
+
     # Cheap, idempotent, and it prevents the worst unattended failure there is:
     # an empty state/ makes next_topic() reoffer the first topic in the bank, so
     # the run republishes a video the channel already has.
@@ -196,6 +212,13 @@ def run(args: argparse.Namespace, day: date) -> tuple[int, list[str]]:
     # the channel goes quiet and there is nothing in the plan left to notice it by.
     for warning in notify.low_banks():
         print(f"topics: {warning}")
+        problems.append(warning)
+
+    # Same shape of failure for the clip channels, and slower to fix: a topic
+    # bank refills itself with a model call, a footage bank needs a source
+    # found, licence-checked, downloaded and indexed.
+    for warning in notify.low_footage():
+        print(f"footage: {warning}")
         problems.append(warning)
 
     pairs = build_plan(day, args.channels, args.force, args.per_day)

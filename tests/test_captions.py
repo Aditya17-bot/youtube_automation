@@ -32,3 +32,26 @@ print("count mismatch falls back to no breaks")
 assert cap.hex_to_ass("#E6EDF3") == "&H00F3EDE6"
 print("ASS colour conversion correct")
 print("\nALL CAPTION TESTS PASS")
+
+# --- the hook card --------------------------------------------------------
+# Held over the opening, with the running captions suppressed underneath: two
+# blocks of text on screen at once and a scrolling viewer reads neither.
+import tempfile
+hook = "I have been dead for six days"
+with tempfile.TemporaryDirectory() as tmp:
+    path = cap.write_ass(cues, pathlib.Path(tmp) / "c.ass", width=1080, height=1920,
+                         font="Arial", hook=hook, hook_hold=2.0)
+    text = path.read_text(encoding="utf-8")
+events = [l for l in text.splitlines() if l.startswith("Dialogue:")]
+assert events[0].startswith("Dialogue: 1,0:00:00.00,0:00:02.00,Hook"), events[0]
+# WrapStyle is 2, so libass will not wrap: the card has to carry its own breaks.
+assert "WrapStyle: 2" in text
+assert r"\N" in events[0], events[0]
+for line in events[1:]:
+    start = line.split(",")[1]
+    assert start >= "0:00:02.00", f"caption runs under the hook card: {line}"
+
+wrapped, size = cap.layout_hook("The fifth door on the landing is warm to the touch", 1080, 67)
+assert wrapped.count("\\N") == 2 and size <= 67
+assert cap.layout_hook("", 1080, 67) == ("", 67)
+print("hook card holds the open and captions wait for it")

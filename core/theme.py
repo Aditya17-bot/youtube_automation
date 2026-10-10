@@ -37,6 +37,10 @@ class Theme:
     fps: int = 30
     # Appended to every image prompt so a channel's shots look like one series.
     image_style: str = ""
+    # How a source frame is fitted to the output aspect: "pad" over a blurred
+    # bed, or "crop" into it. Only the footage formats read it; a format that
+    # draws its own frame is already the right shape.
+    layout: str = "tall"
 
     @classmethod
     def from_channel(cls, channel: dict) -> "Theme":
@@ -55,6 +59,7 @@ class Theme:
             height=v.get("height", cls.height),
             fps=v.get("fps", cls.fps),
             image_style=s.get("image_style", ""),
+            layout=v.get("layout", cls.layout),
         )
 
     def figure(self):

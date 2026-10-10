@@ -17,12 +17,20 @@ see **[SETUP.md](SETUP.md)**.
 ## Quick start
 
 ```bash
-.venv/Scripts/python.exe pipeline.py --channel finance_short                 # next unused topic
-.venv/Scripts/python.exe pipeline.py --channel finance_short --topic rule-of-72
-.venv/Scripts/python.exe pipeline.py --channel story_short --script-only     # cheap dry run
+.venv/Scripts/python.exe pipeline.py --channel clips_short                   # next unused topic
+.venv/Scripts/python.exe pipeline.py --channel clips_short --topic sleep-study
+.venv/Scripts/python.exe pipeline.py --channel clips_short --script-only     # cheap dry run
 
 .venv/Scripts/python.exe -m core.review list
-.venv/Scripts/python.exe -m core.review approve rule-of-72 --channel finance_short
+.venv/Scripts/python.exe -m core.review approve sleep-study --channel clips_short
+```
+
+`clips_short` cuts real film, so it needs footage on disk before it can render.
+Once per source, ever:
+
+```bash
+.venv/Scripts/python.exe -m core.footage fetch --source carnival_of_souls
+.venv/Scripts/python.exe -m core.footage index --source carnival_of_souls
 ```
 
 Output lands in `out/review/<channel>/<slug>/` as `final.mp4`, `thumbnail.png`
@@ -48,10 +56,12 @@ and `metadata.json`. `pipeline.py` itself never uploads; `daily.py` does.
 | `core/retention.py` | Deletes what nothing reads; never a pending video |
 | `core/notify.py` | Emails when an unattended run needs a human |
 | `core/imagegen.py` | Local Stable Diffusion, tuned for 4 GB VRAM |
+| `core/footage.py` | Licensed source film: the licence gate, downloads, the shot index |
 | `core/affiliate.py` | Amazon links + the static hub site (unused by the live channel) |
 | `core/topicgen.py` | Extends a topic bank before it runs dry |
 | `formats/finance.py` | Minimalist chart/typography renderer |
 | `formats/story.py` | AI images + Ken Burns camera moves |
+| `formats/clips.py` | Real film shots, reframed, graded and cut to the narration |
 | `formats/product.py` | 9:16 Shorts renderer for affiliate roundups |
 | `channels/*.yaml` | Per-channel voice, palette, cadence, topic bank |
 | `daily.py` | Unattended run: today's cadence, rendered and uploaded public |
@@ -101,6 +111,103 @@ why a channel's `voice.fallback_name` must name a voice the free endpoint
 actually serves - its catalogue is far smaller than a keyed account's, and an
 Azure-only name there returns no audio at all rather than a flat reading.
 
+**The pictures had to start moving.** `story_short` is a generated still with a
+slow zoom on it, and at feed size that is a slideshow. The writing, the voice
+and the thumbnails were all working; views still settled under a hundred,
+because the Shorts feed wants a visual change every 1.5-2 seconds and a still
+cannot give it one. `formats/clips.py` is the answer: each beat is a shot of
+real film, reframed to 9:16, graded to the channel's palette, with a push-in
+that settles and then re-frames every two seconds.
+
+Nothing else in the pipeline changed. The plugin contract asks a format for a
+silent mp4 of exactly one beat's length, and a cut of film satisfies it as well
+as a Ken Burns still does, so narration, captions, music, thumbnail, packaging,
+review, upload and cadence are all the same code the other channels run.
+
+**Footage is gated on its licence, at the door.** `channels/footage_horror.yaml`
+is a whitelist, and `core/footage.py` refuses to download anything whose licence
+is not one of `ALLOWED_LICENSES` - which excludes every NC and ND variant,
+because a monetised Short is a commercial derivative of whatever it was cut
+from. The claim in the bank is then checked against the HOST's own metadata
+before a byte is written, and both have to agree.
+
+That second check earns its keep. Several films everyone calls public domain are
+served by archive.org under CC BY-NC; `TheLastManOnEarth` is one, and a bank
+written from memory would have sailed straight past a whitelist that only read
+itself. The policy this protects is enforced at the channel level, and
+`clips_short` uploads to the same channel as everything else here.
+
+**What makes a clip ours is checked, not hoped for.** Reused content without
+meaningful addition is what loses a channel its monetisation, so the additions
+are enforced in `validate_script`: the story is original fiction, first person,
+and it may not describe what is on screen. `_SCREEN_TALK` rejects "you can see",
+"the camera", "this footage" outright. That rule is editorial as much as
+defensive - narration that describes the picture is a commentary track, and the
+first shot that disagrees with it kills the whole video. Writing the part the
+picture does *not* show is both more original and more robust.
+
+**Caption defaults follow the frame.** The first channels here were 16:9 and the
+caption style was set for that: 46px, a 90px bottom margin, not bold. On a
+vertical frame all three are wrong - 46px is unreadable at 1080 wide, and the
+Shorts UI covers roughly the bottom 250px with the title, the handle and the
+action rail, so a 90px margin puts the line behind it. `core.assemble` now picks
+64px, a 300px margin and bold whenever the frame is taller than it is wide, and
+`captions.size` / `margin_v` / `bold` override that per channel.
+
+**A day's videos are rendered together and released apart.** Three uploads
+landing in the same minute is a burst, not a schedule - it is the shape the
+inauthentic-content policy looks for, and the feed will not show one channel
+three times running to the same viewer anyway. `publish.slots` in a channel
+config turns one render run into three scheduled releases:
+
+```yaml
+publish:
+  slots: ["05:30", "08:30", "23:30"]   # local time
+  min_gap_hours: 3
+```
+
+YouTube does the waiting, not this machine: `videos.insert` accepts
+`status.publishAt`, so a video uploaded at noon can go out at midnight with the
+PC asleep. That also keeps it inside the existing `youtube.upload` scope -
+uploading and then calling `videos.update` would need a write scope the shared
+token does not carry, and widening `SCOPES` invalidates it.
+
+A scheduled video has to be inserted as `private`; YouTube flips it public
+itself at the slot. So `privacy: public` still describes what the video
+becomes, it just gets there on a timer. `min_gap_hours` is enforced on top of
+the configured times rather than trusted to them, and the slot a video was
+given is written into its `status.json`, so a second publish run the same day
+does not hand the same slot out twice. A channel with no `publish.slots`
+publishes immediately, as before; `core.publish run --now` forces that for one
+run.
+
+**The hook is a field, not a hope.** Beat 0 is one sentence of twelve words or
+fewer, it may not be a question, and `core/captions.py` holds it on screen as a
+card for the first two seconds with the running captions suppressed underneath.
+Most of this audience scrolls muted, so the opening line has to be read rather
+than heard, and a Short is decided before the second sentence starts.
+
+**One shot is never used twice.** `core.footage index` walks a source once with
+ffmpeg, taking scene cuts and the luma of each new shot's first frame out of the
+same `showinfo` pass, and drops what cannot carry narration: anything under
+2.5s, fades, flat title cards, and the head and tail of the film where the
+credits live. Each shot records which video spent it. A beat draws from a run of
+*consecutive* shots, so the cuts read as coverage of one scene instead of a
+slideshow of unrelated stills.
+
+```bash
+python -m core.footage list                            # the bank and its licences
+python -m core.footage fetch   --source carnival_of_souls
+python -m core.footage index   --source carnival_of_souls
+python -m core.footage contact --source carnival_of_souls   # eyeball it
+python -m core.footage drop    --source carnival_of_souls --shots 4,17,18
+python -m core.footage runway                          # days of footage left
+python -m core.footage release --slug <topic-id>       # a video was binned
+```
+
+A feature runs 250-400 usable shots. At 8 shots a video and 3 videos a day that
+is about a fortnight per film, which is what `runway` reports in days.
+
 **Narration is synthesised before visuals are rendered.** Each beat's visual is
 built to the exact length of its own voiceover, which avoids both dead air and
 clipped speech.
@@ -133,14 +240,23 @@ for that run.
 
 | Channel | Format | Shape | Cadence | Earns from |
 |---|---|---|---|---|
-| `story_short` - Nightfall Archive | horror fiction, AI images + camera moves | 9:16, 40-55 s | 3/day | ads, once monetised |
+| `clips_short` - Nightfall Archive | horror fiction over licensed film | 9:16, 40-55 s | 3/day, spaced | ads, once monetised |
+| `story_short` - Nightfall Archive | horror fiction, AI images + camera moves | 9:16, 40-55 s | retired | - |
 | `finance_short` - Simple Money | charts + typography, no GPU | 9:16, 35-52 s | paused | - |
 | `product` - Under Budget | standalone Shorts | 9:16, 35-52 s | idle | affiliate |
 
-**Only `story_short` runs.** Its Shorts found an audience while the finance
-Shorts did not, so `finance_short` is paused at `cadence.per_week: 0` and the
-whole nightly budget goes to horror. Restarting it is two lines of YAML - the
-config, topic bank, OAuth token and history are all still there, untouched.
+**`clips_short` and `story_short` are the same YouTube channel.** Both declare
+`youtube_account: story`, which is Nightfall Archive, and they share a topic
+history through `script.history_from` so the newer one does not work back
+through premises the older one already published. `clips_short` replaced
+`story_short` on 2026-09-17: same channel, same voice, same thumbnails,
+different pictures. Exactly one of them may have a non-zero
+`cadence.per_week` - both at once would double the day's uploads and work
+through the same topic bank twice, and `test_schedule.py` pins that.
+
+`finance_short` is paused at `cadence.per_week: 0` and the whole nightly budget
+goes to horror. Restarting it is two lines of YAML - the config, topic bank,
+OAuth token and history are all still there, untouched.
 
 `finance` and `story` were the long-form halves of the first two channels and
 are gone. Their YouTube channels are unchanged - only the format they publish
@@ -208,6 +324,11 @@ MB, not the ~440 MB an 8-minute 1080p story cost - but ten a week plus the
 per-beat clips, frame dumps and padded audio in each work directory still add
 up, and the generated-image cache grows fastest of all.
 
+Source films are the biggest thing on disk by far - a feature is 300-800 MB and
+`assets/footage/` is not purged by anything, deliberately: re-downloading a
+source would also mean re-indexing it, and the index is what guarantees no shot
+goes out twice. Delete a film by hand once `runway` shows it spent.
+
 ```bash
 python -m core.review disk                    # what is being used
 python -m core.review approve <slug> --channel story_short   # purges the work dir
@@ -255,6 +376,10 @@ install), and an authenticated `claude` CLI. Everything else is pip.
 
 # publishing
 .venv/Scripts/python.exe -m pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+
+# only for Creative Commons YouTube sources in a footage bank; archive.org
+# sources need nothing beyond the standard library
+.venv/Scripts/python.exe -m pip install yt-dlp
 ```
 
 The `finance` channel needs none of the image stack - its visuals are drawn
@@ -274,4 +399,6 @@ Run the tests with:
 | `test_compliance.py` | SEBI lag guard and advice linter, including false positives |
 | `test_script_validation.py` | the finance script contract rejects malformed replies |
 | `test_product_claims.py` | Shorts reject invented prices/ratings/superlatives; link building |
-| `test_captions.py` | cues never straddle a sentence boundary |
+| `test_captions.py` | cues never straddle a sentence boundary, and wait for the hook card |
+| `test_footage.py` | the licence gate, shot filtering, and one shot never used twice |
+| `test_clips.py` | the hook fits its card, and narration never describes the picture |

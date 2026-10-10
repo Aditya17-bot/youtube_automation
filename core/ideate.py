@@ -14,9 +14,24 @@ from core.config import PATHS, load_channel
 from core.script import load_topics
 
 
+def history_key(channel: str) -> str:
+    """Whose history this channel reads and writes.
+
+    Normally its own. `script.history_from` points a channel at another one's,
+    which is how two channel CONFIGS that upload to the SAME YouTube channel
+    avoid covering the same subject twice: `clips_short` replaced `story_short`
+    on Nightfall Archive, and without this it would have worked straight back
+    through topics that channel had already published.
+    """
+    try:
+        return load_channel(channel)["script"].get("history_from") or channel
+    except Exception:  # noqa: BLE001 - a missing config is the caller's problem
+        return channel
+
+
 def _history_path(channel: str) -> Path:
     PATHS.state.mkdir(parents=True, exist_ok=True)
-    return PATHS.state / f"history_{channel}.json"
+    return PATHS.state / f"history_{history_key(channel)}.json"
 
 
 def load_history(channel: str) -> list[dict]:

@@ -115,10 +115,13 @@ captions:
   max_chars: 26
 
 cadence:
+  # Retired on 2026-09-17 in favour of `clips_short`, which posts to this same
+  # YouTube channel from real film instead of generated stills. Nothing else
+  # here changed, so putting this back to 7 is all it takes to restart it -
+  # but set clips_short to 0 first. Two configs posting to one channel would
+  # double the day's uploads and work through the same topic bank twice.
+  #
   # per_week picks WHICH days run (7 = every day), per_day how many videos on
-  # each of those days. Three is what one machine gets through comfortably in a
-  # night; raise it only after watching a run finish inside its window, since
-  # every extra video is another full render plus another upload against the
-  # day's API quota.
-  per_week: 7
+  # each of those days.
+  per_week: 0
   per_day: 3

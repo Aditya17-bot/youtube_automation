@@ -1,0 +1,162 @@
+# Vertical horror Shorts cut from licensed film, narrated by us.
+#
+# This is the replacement for `story_short`, not a second channel. It uploads to
+# the SAME YouTube channel - `youtube_account: story` names
+# secrets/token_story.json, which is Nightfall Archive - so it inherits the
+# subscribers, the history and the authorisation instead of starting at zero.
+# Only the pictures change: real film with real motion instead of a still with a
+# slow zoom on it. Switching back is `cadence.per_week` in the two files.
+#
+# `format: clips` -> formats/clips.py. Footage comes from
+# channels/footage_horror.yaml, which is a licence whitelist; see core/footage.py
+# for why the gate is where it is.
+#
+# Live since 2026-09-17, after three were watched by hand. `story_short` is at
+# per_week 0; only one of the two configs should ever have a non-zero cadence,
+# since they are the same YouTube channel.
+#
+#   python -m core.footage fetch --source carnival_of_souls
+#   python -m core.footage index --source carnival_of_souls
+#   python pipeline.py --channel clips_short
+name: "Nightfall Archive"
+format: clips
+youtube_account: story           # uploads with secrets/token_story.json
+auto_publish: true
+privacy: public
+cta: "Subscribe to Nightfall Archive for a story every night."
+
+script:
+  mode: fiction
+  topics_from: story           # reads channels/topics_story.yaml, same bank
+  # Shares story_short's topic history, because it shares story_short's
+  # YouTube channel. Without this it would start at the top of the bank and
+  # republish premises Nightfall Archive has already run.
+  history_from: story_short
+  # 110 words over 8 beats measures about 51 s. The ceiling is enforced twice:
+  # here as an estimate, and again in core.assemble against real narration.
+  target_words: [90, 110]
+  duration_range: [40, 55]     # under 60 s or YouTube stops calling it a Short
+  # Fewer, longer beats than the generated-image format used. A beat is one
+  # film shot, and a shot needs a few seconds to be read as a place.
+  beats: [6, 8]
+  tone: >-
+    first person, interior, and never describing the picture. One scene, one
+    turn, no resolution. The narrator knows something the viewer does not and
+    is slow to say it. End on the image, not an explanation
+  audience: "horror viewers scrolling at night"
+
+footage:
+  bank: horror                 # channels/footage_horror.yaml
+  # Handed to the model so it does not write a phone into 1932.
+  era: "old black and white film, no dialogue of its own"
+
+voice:
+  # edge-tts, deliberately. Azure's express-as was wired up, working, and worse:
+  # Guy acting the lines came out mannered where Brian reading them flat comes
+  # out cold, and cold is what the format wants. See core/emotion.py.
+  provider: edge-tts
+  name: en-US-BrianMultilingualNeural
+  rate: "-4%"
+  pitch: "-4Hz"
+  words_per_minute: 143   # measured; see core.script.words_per_minute
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  encoder: h264_nvenc
+  # tall crops a 4:3 source to 3:4 and fills three quarters of the height with
+  # it, captions on the blur underneath. pad keeps the whole frame but is 58%
+  # blurred bar; crop fills the screen and loses two thirds of the width.
+  layout: tall
+
+style:
+  background: "#050607"
+  surface:    "#0D0F11"
+  text:       "#DCD8D2"
+  muted:      "#7A756E"
+  accent:     "#8B1E1E"
+  accent_alt: "#4A5A63"
+  grid:       "#15181B"
+
+thumbnail:
+  scrim: 0.86
+  # Unchanged from story_short: the thumbnail is a generated woman's face every
+  # time. It is the one thing that reliably stops a thumb at feed size, and it
+  # is not taken from the footage - a frame of someone else's film as the cover
+  # is the part that would read as a reupload.
+  face: true
+  anchor_y: 0.22
+  style: "horror portrait photo, close up, sharp focus on the eyes, desaturated, deep blacks, film grain"
+  subjects:
+    - "a gaunt pale woman, wet black hair over half her face, one eye staring into the lens"
+    - "a woman's face, eyes rolled back to solid white, mouth slightly open"
+    - "a woman in a filthy white nightgown, head tilted too far sideways, hair across her mouth"
+    - "a woman's grey face pressed against cracked glass, breath fogging it"
+    - "a woman with hollow black eye sockets, cracks across porcelain-white skin"
+    - "a drowned woman, matted hair on her cheeks, water running off her chin, eyes open"
+    - "a veiled woman in black lace, faint knowing smile, half her face in shadow"
+    - "an old woman in silent mid-scream, tendons standing out in her neck"
+    - "a woman's ash-grey face out of the dark, pupils enormous, unblinking"
+    - "a young woman with stitched-shut eyes, calm, face turned to the lens"
+  settings:
+    - "in an unlit corridor"
+    - "in heavy fog on a night road"
+    - "in a derelict bedroom, peeling wallpaper"
+    - "behind a rain-streaked window"
+    - "in a flooded basement, black water"
+    - "among bare trees, dark forest"
+    - "in an abandoned hospital ward"
+    - "in a dusty attic, dust sheets"
+  lighting:
+    - "one flickering bulb overhead, hard shadows under the eyes"
+    - "cold moonlight on one side, the other side black"
+    - "harsh flashlight from below"
+    - "dim red emergency light"
+    - "a single candle against darkness"
+    - "sodium streetlamp behind her, rim light on her hair"
+
+music:
+  enabled: true
+  gain_db: -22
+  target_lufs: -14
+
+captions:
+  enabled: true
+  max_chars: 26
+  # The opening line, held as a card for exactly as long as it is spoken. Most
+  # of this audience scrolls muted, so the hook has to be read rather than
+  # heard. hook_max_hold is a ceiling, not the hold itself.
+  hook: true
+  hook_max_hold: 7.0
+
+cadence:
+  # Paused 2026-09-20: 31 videos produced 7.3K lifetime views and 15 subs,
+  # with recent uploads landing single digits. Three a day into that is
+  # spend with no return. To restart: set per_week back to 7.
+  per_week: 0
+  per_day: 3
+
+publish:
+  # Three videos a day are rendered in one run and must not all appear at once:
+  # a burst is the shape the inauthentic-content policy looks for, and the feed
+  # will not show one channel three times running to the same viewer anyway. So
+  # the run uploads all three and hands YouTube a release time for each
+  # (`status.publishAt`), which means the machine does not need to be awake when
+  # they go out. See core.schedule.publish_slots.
+  #
+  # Times are LOCAL (IST). The spread is a guess and should be replaced with
+  # real numbers: Nightfall Archive has no analytics token yet, so nothing here
+  # knows where its viewers actually are. Mint one with
+  # `python <clip_farm>/tools/audience.py --auth` and move these to
+  # whatever the country split says.
+  #
+  # Until then it covers the three windows an English-language horror channel
+  # most likely wants, rather than three slots in one of them:
+  slots:
+    - "05:30"     # 20:00 US Eastern - US evening
+    - "08:30"     # 23:00 US Eastern - US late night
+    - "23:30"     # 19:00 UK         - UK evening, US afternoon
+  # Enforced on top of the times above, so a typo cannot put two ten minutes
+  # apart. The gaps as written are 3h, 15h and 6h.
+  min_gap_hours: 3

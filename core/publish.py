@@ -21,6 +21,7 @@ separate from the 10,000-unit pool, so uploads no longer compete with reads.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from core.config import PATHS, load_channel
@@ -109,9 +110,28 @@ def _service(channel: str, *, interactive: bool = False):
     return build_service("youtube", "v3", credentials=get_credentials(channel, interactive=interactive))
 
 
+def _rfc3339(when: datetime) -> str:
+    """YouTube wants UTC with a Z, and rejects a naive timestamp outright."""
+    if when.tzinfo is None:
+        when = when.astimezone()
+    return when.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def upload(channel: str, slug: str, *, privacy: str | None = None,
-           keep_local: bool = False) -> str:
+           keep_local: bool = False, publish_at: datetime | None = None) -> str:
     """Upload one reviewed video. Returns the new video id.
+
+    `publish_at` hands the release time to YouTube instead of publishing
+    immediately. A scheduled video MUST be inserted as private - the API
+    rejects `publishAt` alongside any other privacy status - and YouTube flips
+    it public itself at that moment, whether or not this machine is still on.
+    So `privacy: public` in the config still describes what the video becomes;
+    it just gets there on a timer.
+
+    Scheduling at INSERT time is deliberate. The alternative, uploading and
+    then calling `videos.update`, needs a write scope that the shared
+    token_story.json does not carry, and widening `SCOPES` would invalidate it
+    and break the channel's daily upload.
 
     Local renders are purged afterwards unless `keep_local` is set: even a
     50-second vertical render plus its cached images adds up quickly at ten
@@ -142,6 +162,10 @@ def upload(channel: str, slug: str, *, privacy: str | None = None,
             "selfDeclaredMadeForKids": meta.get("madeForKids", False),
         },
     }
+    if publish_at is not None:
+        body["status"]["privacyStatus"] = "private"
+        body["status"]["publishAt"] = _rfc3339(publish_at)
+        print(f"  scheduled for {publish_at:%a %d %b %H:%M %Z}")
 
     media = MediaFileUpload(str(video), chunksize=8 * 1024 * 1024, resumable=True,
                             mimetype="video/mp4")
@@ -167,7 +191,14 @@ def upload(channel: str, slug: str, *, privacy: str | None = None,
         except Exception as exc:  # noqa: BLE001
             print(f"  thumbnail skipped: {exc}")
 
-    set_status(channel, slug, STATUS_PUBLISHED, note=f"https://youtu.be/{video_id}")
+    note = f"https://youtu.be/{video_id}"
+    extra = None
+    if publish_at is not None:
+        note += f"  (public at {publish_at:%Y-%m-%d %H:%M %Z})"
+        # Recorded so the next run can see this slot is spoken for. status.json
+        # is the one file that survives the local purge below.
+        extra = {"release_at": publish_at.isoformat(timespec="seconds")}
+    set_status(channel, slug, STATUS_PUBLISHED, note=note, extra=extra)
 
     # The upload keeps the mp4 open, and Windows refuses to unlink a file with a
     # live handle. Nothing needs the stream once the last chunk is acknowledged.
@@ -193,18 +224,57 @@ def upload(channel: str, slug: str, *, privacy: str | None = None,
     return video_id
 
 
+def pending_releases(channel: str) -> list[datetime]:
+    """Release times already promised to videos that are up but not out yet.
+
+    Read from status.json rather than from YouTube: the videos are private
+    until they release, and listing them would need a scope this token does not
+    have. A slot handed out in an earlier run is still spent.
+    """
+    from core.review import list_pending
+
+    out = []
+    for item in list_pending(channel):
+        stamp = item.get("release_at")
+        if not stamp:
+            continue
+        try:
+            out.append(datetime.fromisoformat(stamp))
+        except ValueError:
+            continue
+    return out
+
+
 def publish_approved(channel: str, *, limit: int = 5, privacy: str | None = None,
-                     keep_local: bool = False) -> list[str]:
+                     keep_local: bool = False, space: bool = True) -> list[str]:
+    """Upload everything approved, spaced out if the channel asks for it.
+
+    A day's videos are rendered in one run, and posting three of them in the
+    same minute is a burst rather than a schedule. `publish.slots` in the
+    channel config turns that into three scheduled releases; a channel with no
+    slots publishes immediately, exactly as before.
+    """
+    from core import schedule
+
     ready = approved(channel)[:limit]
     if not ready:
         print("nothing approved")
         return []
 
+    slots = schedule.publish_slots(
+        channel, len(ready), taken=pending_releases(channel)) if space else []
+    if slots and len(slots) < len(ready):
+        # Better to post the rest now than to drop them: a video nobody
+        # scheduled is still a video, and the gap is reported.
+        print(f"  only {len(slots)} release slots for {len(ready)} videos; "
+              "the rest go out immediately")
+
     ids = []
-    for item in ready:
+    for i, item in enumerate(ready):
         print(f"{item['channel']}/{item['slug']}")
         ids.append(upload(item["channel"], item["slug"], privacy=privacy,
-                          keep_local=keep_local))
+                          keep_local=keep_local,
+                          publish_at=slots[i] if i < len(slots) else None))
     return ids
 
 
@@ -230,6 +300,8 @@ if __name__ == "__main__":
     p_all.add_argument("--privacy", choices=["private", "unlisted", "public"])
     p_all.add_argument("--keep-local", action="store_true",
                         help="do not purge local renders after upload")
+    p_all.add_argument("--now", action="store_true",
+                        help="ignore publish.slots and release everything immediately")
 
     args = ap.parse_args()
 
@@ -242,4 +314,4 @@ if __name__ == "__main__":
         upload(args.channel, args.slug, privacy=args.privacy, keep_local=args.keep_local)
     else:
         publish_approved(args.channel, limit=args.limit, privacy=args.privacy,
-                         keep_local=args.keep_local)
+                         keep_local=args.keep_local, space=not args.now)

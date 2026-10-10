@@ -21,7 +21,8 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font},{size},{primary},{primary},{outline},{back},0,0,0,0,100,100,0,0,1,{outline_w},0,2,120,120,{margin_v},1
+Style: Default,{font},{size},{primary},{primary},{outline},{back},{bold},0,0,0,100,100,0,0,1,{outline_w},0,2,120,120,{margin_v},1
+Style: Hook,{font},{hook_size},{primary},{primary},{outline},{hook_back},-1,0,0,0,100,100,0,0,3,{hook_pad},0,5,100,100,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -117,6 +118,41 @@ def group_words(
     return cues
 
 
+# Bold Arial advances roughly half an em per character averaged over mixed-case
+# English, outline included. Good enough to choose a size; libass lays it out.
+_CHAR_EM = 0.5
+_HOOK_LINES = 3
+
+
+def layout_hook(text: str, width: int, base: int, minimum: int = 44) -> tuple[str, int]:
+    """Break the hook into balanced lines and pick a size that fits them.
+
+    The card is broken here with explicit \\N rather than left to libass,
+    because the header sets `WrapStyle: 2` - no automatic wrapping - so that a
+    caption line never rewraps itself mid-sentence. Under that setting a hook
+    long enough to need two lines would otherwise run straight off both edges
+    of the frame.
+
+    Lines are balanced rather than greedy: a card reading "I have been dead
+    for" / "six" is worse than two even lines, and the hook is the one piece of
+    text on the channel that has to be read at a glance.
+    """
+    words = text.split()
+    if not words:
+        return "", base
+
+    rows = [text]
+    for n in range(1, _HOOK_LINES + 1):
+        per = -(-len(words) // n)                 # ceil
+        candidate = [" ".join(words[i:i + per]) for i in range(0, len(words), per)]
+        rows = candidate
+        if max(len(r) for r in candidate) * _CHAR_EM * base <= width - 200:
+            break
+
+    size = min(base, int((width - 200) / (max(len(r) for r in rows) * _CHAR_EM)))
+    return "\\N".join(rows), max(minimum, size)
+
+
 def write_ass(
     cues: list[Cue],
     out_path: Path,
@@ -128,10 +164,24 @@ def write_ass(
     primary: str = "#E6EDF3",
     outline: str = "#0E1116",
     margin_v: int = 90,
+    bold: bool = False,
+    hook: str | None = None,
+    hook_hold: float = 2.0,
 ) -> Path:
+    """Write the caption file, optionally opening on a held hook card.
+
+    The card is the whole reason this parameter exists: a Short is decided in
+    its first two seconds, and most of that audience is scrolling muted, so the
+    opening line has to be READ rather than heard. While the card is up the
+    running captions are suppressed - two blocks of text on screen at once and
+    neither gets read.
+    """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
+    hook_text, hook_size = layout_hook(
+        (hook or "").strip(), width, base=int(size * 1.45)
+    )
     body = ASS_HEADER.format(
         width=width,
         height=height,
@@ -142,10 +192,24 @@ def write_ass(
         back=hex_to_ass(outline, alpha="80"),
         outline_w=3,
         margin_v=margin_v,
+        bold=-1 if bold else 0,
+        hook_size=hook_size,
+        hook_back=hex_to_ass(outline, alpha="A0"),
+        hook_pad=18,
     )
-    lines = [
-        f"Dialogue: 0,{_ts(c.start)},{_ts(c.end)},Default,,0,0,0,,{c.text}"
-        for c in cues
-    ]
+
+    lines = []
+    floor = 0.0
+    if hook_text:
+        floor = hook_hold
+        lines.append(
+            f"Dialogue: 1,{_ts(0)},{_ts(hook_hold)},Hook,,0,0,0,,{hook_text}"
+        )
+    for c in cues:
+        if c.end <= floor:
+            continue
+        lines.append(
+            f"Dialogue: 0,{_ts(max(c.start, floor))},{_ts(c.end)},Default,,0,0,0,,{c.text}"
+        )
     out_path.write_text(body + "\n".join(lines) + "\n", encoding="utf-8")
     return out_path

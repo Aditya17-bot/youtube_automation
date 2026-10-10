@@ -1,0 +1,168 @@
+# Footage bank for the `clips_short` channel.
+#
+# This file is a LICENCE WHITELIST, not a wishlist. `core/footage.py` refuses to
+# download an entry whose `license` is not in core.footage.ALLOWED_LICENSES, and
+# then refuses again if archive.org's own metadata disagrees with what is
+# claimed here. Both checks have to pass before a byte is written to disk.
+#
+# Why the gate is this strict: YouTube enforces the reused-content and
+# inauthentic-content policies at the CHANNEL level, and this channel uploads to
+# the same account as Nightfall Archive. One unlicensed source could cost the
+# whole channel its monetisation, which is a far worse outcome than a thin week
+# of footage.
+#
+# Non-commercial licences are rejected on purpose. `TheLastManOnEarth` on
+# archive.org carries CC BY-NC, so a monetised Short cut from it breaches the
+# licence even though the film is widely called public domain. It is a tempting
+# source and it is not usable; test_footage.py pins that rejection.
+#
+#   python -m core.footage fetch --source carnival_of_souls
+#   python -m core.footage index --source carnival_of_souls
+#   python -m core.footage contact --source carnival_of_souls
+#   python -m core.footage runway
+#
+# `skip_head` / `skip_tail` are seconds cut off each end before shots are
+# offered. Titles, studio logos and end credits are all on-screen text, and a
+# Short whose picture carries someone else's title card reads as a reupload.
+
+brief: >-
+  Public-domain horror footage, biased towards silent film. A silent source has
+  no dialogue to fight with our narrator, its faces are lit theatrically, and it
+  looks nothing like anything else in the feed - which is the whole point, since
+  the channel lost its audience by looking like a slideshow.
+
+sources:
+  # The best single source here. Dreamlike rather than gory: pale faces,
+  # abandoned pavilion, long empty roads. Cuts well against first-person dread.
+  - id: carnival_of_souls
+    kind: archive
+    ref: CarnivalofSouls
+    title: "Carnival of Souls (1962)"
+    license: public-domain
+    license_proof: https://archive.org/details/CarnivalofSouls
+    skip_head: 180
+    skip_tail: 150
+
+  # Silent, expressionist, no dialogue at all. Painted shadows and impossible
+  # architecture: every frame looks wrong in a way that needs no explanation.
+  - id: caligari
+    kind: archive
+    ref: DasKabinettdesDoktorCaligariTheCabinetofDrCaligari
+    title: "The Cabinet of Dr. Caligari (1919)"
+    license: public-domain
+    license_proof: https://archive.org/details/DasKabinettdesDoktorCaligariTheCabinetofDrCaligari
+    skip_head: 120
+    skip_tail: 120
+
+  # A 1922 pseudo-documentary on witchcraft. Genuinely unsettling imagery and
+  # tinted stock, which grades to something that does not look like film at all.
+  - id: haxan
+    kind: archive
+    ref: Haxan_tinted_and_subtitled
+    title: "Haxan (1922)"
+    license: public-domain
+    license_proof: https://archive.org/details/Haxan_tinted_and_subtitled
+    skip_head: 240
+    skip_tail: 180
+
+  - id: phantom_1925
+    kind: archive
+    ref: ThePhantomoftheOpera
+    title: "The Phantom of the Opera (1925)"
+    license: public-domain
+    license_proof: https://archive.org/details/ThePhantomoftheOpera
+    skip_head: 180
+    skip_tail: 150
+
+  # Fog, a dead village, a lot of night exteriors. The most "modern horror"
+  # looking source in the bank.
+  - id: horror_hotel
+    kind: archive
+    ref: Horror_Hotel
+    title: "City of the Dead / Horror Hotel (1960)"
+    license: public-domain
+    license_proof: https://archive.org/details/Horror_Hotel
+    skip_head: 180
+    skip_tail: 150
+
+  - id: house_on_haunted_hill
+    kind: archive
+    ref: The_House_On_Haunted_Hill
+    title: "House on Haunted Hill (1959)"
+    license: public-domain
+    license_proof: https://archive.org/details/The_House_On_Haunted_Hill
+    skip_head: 180
+    skip_tail: 150
+
+  - id: white_zombie
+    kind: archive
+    ref: WhiteZombie
+    title: "White Zombie (1932)"
+    license: public-domain
+    license_proof: https://archive.org/details/WhiteZombie
+    skip_head: 150
+    skip_tail: 120
+
+  - id: the_ghoul
+    kind: archive
+    ref: TheGhoul
+    title: "The Ghoul (1933)"
+    license: public-domain
+    license_proof: https://archive.org/details/TheGhoul
+    skip_head: 150
+    skip_tail: 120
+
+  - id: atom_age_vampire
+    kind: archive
+    ref: AtomAgeVampire
+    title: "Atom Age Vampire (1960)"
+    license: public-domain
+    license_proof: https://archive.org/details/AtomAgeVampire
+    skip_head: 150
+    skip_tail: 150
+
+  - id: most_dangerous_game
+    kind: archive
+    ref: TheMostDangerousGame
+    title: "The Most Dangerous Game (1932)"
+    license: public-domain
+    license_proof: https://archive.org/details/TheMostDangerousGame
+    skip_head: 150
+    skip_tail: 120
+
+  # Held back deliberately. The film is genuinely public domain - the 1968
+  # release went out without a copyright notice - but it is the single most
+  # aggregated PD title on YouTube, and Content ID claims on it come from
+  # rights-holders of *restorations* rather than of the film. Enable it only
+  # once the channel can afford to argue a claim.
+  # - id: night_of_the_living_dead
+  #   kind: archive
+  #   ref: night_of_the_living_dead_dvd
+  #   title: "Night of the Living Dead (1968)"
+  #   license: public-domain
+  #   license_proof: https://archive.org/details/night_of_the_living_dead_dvd
+  #   skip_head: 200
+  #   skip_tail: 200
+
+  # Prelinger texture. Short films, so the shot yield is small, but 1950s
+  # civil-defence and hygiene footage graded cold is the analog-horror look -
+  # ordinary people doing ordinary things, and something wrong with the film.
+  # Half of this film is children in classrooms, and the channel's own rules bar
+  # children as victims. The narration cannot break that rule - it is checked -
+  # but the PICTURE can imply it, so those shots were blacklisted by hand after
+  # reading the contact sheet:
+  #
+  #   python -m core.footage drop --source duck_and_cover
+  #       --shots 2,5,6,7,8,9,13,14,15,16,17,18,19,20,21,23,26,27
+  #
+  # That leaves 17 adult shots - two videos - and it is the reason `plan()`
+  # tolerates gaps: after the drop there was no run of eight in a row left
+  # anywhere in the film.
+  - id: duck_and_cover
+    kind: archive
+    ref: DuckandC1951
+    title: "Duck and Cover (1951)"
+    license: public-domain
+    license_proof: https://archive.org/details/DuckandC1951
+    skip_head: 45
+    skip_tail: 30

@@ -14,7 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from core import affiliate, compliance, emotion, thumbnail as thumb
-from core.script import iter_beats
+from core.script import iter_beats, load_format
 from core.theme import Theme
 
 THUMB_W, THUMB_H = 1280, 720
@@ -38,6 +38,17 @@ def build_description(script: dict, channel: dict, chapters: list[tuple[float, s
         parts.append("DISCLAIMER")
         parts.append(compliance.DISCLAIMER_CLOSE)
         parts.append("")
+
+    # A format may add a block of its own - the clip format credits the film it
+    # cut from and the licence that allows it. Asked for rather than hardcoded
+    # here, so a new format does not need this file edited.
+    fmt = load_format(channel["format"])
+    note = getattr(fmt, "description_note", None)
+    if note:
+        block = note(script, channel)
+        if block:
+            parts.append(block)
+            parts.append("")
 
     if channel.get("format") == "product" and script.get("items"):
         slug = script.get("topic_id") or ""
